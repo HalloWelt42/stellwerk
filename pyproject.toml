@@ -1,0 +1,33 @@
+[project]
+name = "stellwerk"
+description = "Stellwerk: startet und stoppt die eigenen Webapps eines Rechners, nativ oder mit Docker"
+requires-python = ">=3.11"
+dynamic = ["version"]
+dependencies = [
+  "dienstkern @ https://github.com/HalloWelt42/dienstkern/archive/refs/heads/main.tar.gz",
+  "pydantic>=2.7",
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-asyncio>=0.24", "httpx>=0.27"]
+
+[project.scripts]
+stellwerk = "stellwerk.__main__:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = "-q -p no:cacheprovider"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.setuptools.packages.find]
+include = ["stellwerk*"]
+
+[tool.setuptools.package-data]
+"stellwerk" = ["VERSION", "oberflaeche/**/*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "stellwerk.__version__"}

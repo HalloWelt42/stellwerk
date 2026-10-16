@@ -1,0 +1,176 @@
+# Stellwerk
+
+Ein Ort für die eigenen Webapps eines Rechners: Backend, Oberfläche, Datenbank und was eine Webapp sonst zum Laufen
+braucht. Je Webapp eine Datei mit ihren Teilen, nativ als eigener Prozess oder als Container mit Docker. Ein Schalter
+startet die ganze Webapp in der Reihenfolge ihrer Abhängigkeiten und hält sie in umgekehrter Folge wieder an. Statt dass
+Projekte irgendwo im Hintergrund laufen, steht hier, was läuft, was es belegt und was es ausgibt.
+
+- **Oberfläche im Browser** unter `http://127.0.0.1:8550/`, nur auf diesem Rechner erreichbar.
+- **Menüleistensymbol** auf dem Mac: Webapps mit Schaltern, Öffnen im Browser.
+- **Übersteht Neustarts:** läuft als launchd- oder systemd-Dienst; was laufen soll, startet wieder.
+- **Abstürze** einzelner Teile werden mit Pausen neu gestartet; stürzt ein Teil zu oft ab, bleibt er aus.
+- **Docker bei Bedarf:** startet ein Docker-Teil, startet das Stellwerk vorher Docker; angehalten wird Docker nur von
+  Hand und nur, wenn kein Docker-Teil mehr läuft.
+
+## Zusammenspiel
+
+Das Stellwerk gehört zu [Leitstelle](https://github.com/HalloWelt42/leitstelle),
+[Maschinenraum](https://github.com/HalloWelt42/maschinenraum) und [Klangwerk](https://github.com/HalloWelt42/klangwerk).
+Die Webapps im Stellwerk halten selbst keine Modelle: Was sie an KI brauchen, holen sie über die Leitstelle. Die
+KI-Dienste stehen im Maschinenraum, die Sprachmodelle im Modell-Läufer.
+
+```
+Webapps (Stellwerk)  ->  Leitstelle  ->  Modell-Läufer      (Sprachmodelle)
+                                     ->  Maschinenraum      (übrige KI-Dienste, etwa das Klangwerk)
+```
+
+Starten, Anhalten, Abhängigkeiten, Neustarts, Sollzustand und Prozessmessung teilen sich Stellwerk und Maschinenraum
+über den [Dienstkern](https://github.com/HalloWelt42/dienstkern). Das Stellwerk hat keine Verbindung zur Leitstelle;
+es schaltet nur Webapps.
+
+## Installieren
+
+Python 3.11 oder neuer; für die Oberfläche Node, für das Menüleistensymbol die Befehlszeilenwerkzeuge von Xcode.
+
+```bash
+git clone https://github.com/HalloWelt42/stellwerk.git && cd stellwerk && ./installieren.sh
+```
+
+Das Skript legt den Ordner `~/Stellwerk` an, installiert das Programm in ein eigenes venv und richtet es als Dienst
+ein. Derselbe Befehl aktualisiert; App-Dateien, Einstellungen und Sollzustand bleiben.
+
+## Der Ordner
+
+| Pfad | Inhalt |
+|---|---|
+| `einstellungen.toml` | Port der Oberfläche, Messtakt, Neustartregeln, Docker |
+| `apps/<kennung>.toml` | je Webapp eine Datei mit ihren Teilen; der Dateiname ist die Kennung |
+| `protokolle/stellwerk.log` | Ausgabe des Stellwerks |
+| `protokolle/<webapp>.<teil>.log` | Ausgabe eines Teils; `docker.log` die der Docker-Befehle |
+| `zustand.json` | Sollzustand je Teil und gemessene Höchstwerte |
+
+Neue oder geänderte App-Dateien liest das Stellwerk im nächsten Takt. Stand ohne Oberfläche:
+
+```bash
+~/Stellwerk/.venv/bin/stellwerk --liste
+```
+
+## App-Datei
+
+Beispiel: [beispiele/notizbuch.toml](beispiele/notizbuch.toml). Unbekannte Felder sind ein Fehler; die Datei wird
+dann mit einer lesbaren Meldung übergangen. Eine Datei mit `faehigkeiten` gehört in den Maschinenraum.
+
+| Feld | Vorgabe | Bedeutung |
+|---|---|---|
+| `name` | Pflicht | Anzeigename der Webapp |
+| `beschreibung` | leer | ein Satz für die Oberfläche |
+| `oberflaeche` | keine | Adresse der Webapp im Browser; Karte und Menüleiste bekommen einen Knopf zum Öffnen |
+| `[[teile]]` | mindestens einer | die Teile der Webapp, siehe unten |
+
+Je Teil:
+
+| Feld | Vorgabe | Bedeutung |
+|---|---|---|
+| `kennung` | Pflicht | Kleinbuchstaben, Ziffern, `-` und `_`; eindeutig in der Webapp |
+| `name` | Pflicht | Anzeigename, etwa Backend oder Oberfläche |
+| `art` | nativ | `nativ`: eigener Prozess. `docker`: Container aus der Compose-Datei des Projekts |
+| `ordner` | Pflicht | Arbeitsordner; `~` und `$VAR` werden aufgelöst |
+| `befehl` | Pflicht bei nativ | Programm und Argumente; ein relativer Programmpfad gilt ab `ordner`; `$NAME` aus der Umgebung des Teils |
+| `vorher` | leer | nativ: Befehl, der vor jedem Start einmal läuft |
+| `compose` | leer | docker: Optionen vor dem Unterbefehl, genau wie das Projekt sie nutzt (`--env-file`, `-f`) |
+| `container` | Pflicht bei docker | Name des Dienstes in der Compose-Datei |
+| `port` | keiner | erreichbar heißt: der Port nimmt Verbindungen an; bei docker Pflicht, wenn keine `pruefadresse` |
+| `pruefadresse` | keine | strenger: eine Antwort unter 500 von dieser Adresse |
+| `braucht` | leer | Teile derselben Webapp, die vorher laufen müssen |
+| `speicher_gb` | 0,5 | Schätzung, bis der Teil gemessen ist |
+| `startzeit_s` | 60 | so lange darf der Start bis zur Erreichbarkeit dauern |
+| `anhaltezeit_s` | 20 | so lange darf das Beenden dauern, danach hart |
+| `umgebung` | leer | zusätzliche Umgebungsvariablen |
+| `umgebung_datei` | keine | Datei mit Zeilen `NAME=WERT`, zum Beispiel die `.env` eines Projekts |
+| `pfad` | übliche Systempfade | Suchpfad für Programme |
+| `neustart` | ja | nach einem Absturz neu starten, solange der Teil laufen soll |
+| `aktiv_ab_prozent` | 5 | ab dieser Prozessorlast (Prozent eines Kerns) gilt er als arbeitend |
+
+Docker-Teile starten mit `docker compose <compose> up -d <container>` und halten mit `docker compose <compose> stop
+<container>` an, nie per Signal. Wichtig ist derselbe Aufruf wie im Projekt (Umgebungsdatei, Compose-Datei): sonst
+entstünde ein zweites Compose-Projekt mit leerem Datenbestand.
+
+## Abgrenzung je Teil
+
+Jeder native Teil läuft in eigener Sitzung und Prozessgruppe, im eigenen Arbeitsordner, mit eigener Umgebung (nur
+Suchpfad, Heimordner, Sprache und was die Datei nennt) und schreibt in eine eigene Protokolldatei. Anhalten trifft
+genau seine Prozessgruppe: erst freundlich, nach `anhaltezeit_s` hart. Läuft ein Teil schon, ohne vom Stellwerk
+gestartet zu sein (sein Port antwortet), übernimmt das Stellwerk ihn: es misst ihn und kann ihn anhalten, startet ihn
+aber nicht doppelt.
+
+## Einstellungen
+
+`einstellungen.toml`, Abschnitte und Vorgaben:
+
+| Abschnitt | Feld | Vorgabe | Bedeutung |
+|---|---|---|---|
+| | `name` | Rechnername | Anzeigename |
+| `oberflaeche` | `adresse`, `port` | 127.0.0.1, 8550 | wo die Oberfläche lauscht; nur 127.0.0.1 ist vor dem Netz geschützt |
+| `messung` | `takt_s` | 5 | Abstand der Prüfung und Messung der Teile |
+| `neustart` | `pausen_s` | 5, 30, 120 | Pausen vor dem ersten, zweiten, dritten Neustart nach Absturz |
+| `neustart` | `fenster_s`, `im_fenster` | 600, 3 | mehr Abstürze im Zeitraum: der Teil bleibt aus |
+| `docker` | `befehl`, `pruefbefehl`, `anhaltebefehl` | `docker desktop start`, `docker info`, `docker desktop stop` | wie Docker gestartet, geprüft und angehalten wird |
+| `docker` | `prozessmuster`, `speicher_gb` | virtuelle Maschine, 8 | wessen Speicher als Docker zählt |
+| `docker` | `startzeit_s`, `anhaltezeit_s` | 240, 180 | Grenzen für Start und Anhalten |
+
+## Schnittstelle
+
+| Aufruf | Wirkung |
+|---|---|
+| `GET /api/stand` | alle Webapps mit ihren Teilen, Docker, fehlerhafte Dateien |
+| `POST /api/apps/<kennung>/starten`, `/anhalten`, `/neustarten` | ganze Webapp schalten; Antwort mit Erfolg und Meldung |
+| `GET /api/apps/<kennung>/teile/<teil>/protokoll?zeilen=200` | Ende der Protokolldatei eines Teils |
+| `POST /api/docker/starten`, `/anhalten` | Docker schalten; anhalten nur, wenn kein Docker-Teil läuft |
+| `GET /api/docker/protokoll`, `GET /api/protokoll` | Ausgabe der Docker-Befehle, Ausgabe des Stellwerks |
+
+Schreibende Aufrufe brauchen den Kopf `X-Stellwerk: 1`, und es gelten nur die Rechnernamen dieses Rechners. So kann
+keine fremde Webseite im selben Browser Webapps schalten.
+
+## Entwickeln
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -e ".[test]" && .venv/bin/python -m pytest
+```
+
+```bash
+cd frontend && npm install && npm run pruefen && npm run build
+```
+
+Oberfläche mit Neuladen: `cd frontend && npm run dev` (Port 5550, Schnittstelle vom laufenden Stellwerk). Nach
+Änderungen an den Pydantic-Modellen `npm run typen`. Die Tests laufen gegen echte kleine Prozesse; Docker spielt
+dabei ein Schein-Programm, das Container als HTTP-Server startet.
+
+---
+
+## Lizenz
+
+**Nicht-kommerzielle Nutzung** - Siehe [LICENSE](LICENSE)
+
+Erlaubt: Private Nutzung, Installation, persönliche Anpassungen, Teilen mit Quellenangabe
+
+Verboten: Kommerzielle Nutzung, Verkauf, Einbindung in kommerzielle Produkte
+
+---
+
+## Unterstützen
+
+Stellwerk ist ein privates Hobby-Projekt. Kein Tracking, keine Werbung, keine Kompromisse.
+
+Wenn dir das Projekt gefällt, kannst du ihm einen Stern geben - oder direkt hier:
+
+[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/HalloWelt42)
+
+**Crypto:**
+
+| Coin | Adresse |
+|------|---------|
+| BTC | `bc1qnd599khdkv3v3npmj9ufxzf6h4fzanny2acwqr` |
+| DOGE | `DL7tuiYCqm3xQjMDXChdxeQxqUGMACn1ZV` |
+| ETH | `0x8A28fc47bFFFA03C8f685fa0836E2dBe1CA14F27` |
+
+Copyright (c) 2026 HalloWelt42

@@ -1,0 +1,38 @@
+/*
+ * Flächen "Ziegel" (Wahl des Nutzers, 17.10.2026): dunkles Rötlichbraun wie ein altes Stellwerkshaus, damit man
+ * Leitstelle (Blaugrau), Maschinenraum (Kesselraum) und Stellwerk auf einen Blick unterscheidet. Akzent,
+ * Bedeutungsfarben und alle Bausteine bleiben wie in der Leitstelle. Gilt mit data-flaechen="ziegel" am <html>.
+ */
+
+:root[data-flaechen="ziegel"]:not([data-theme="hell"]) {
+  --sw-grund: #211a19;
+  --sw-leiste: #181312;
+  --sw-flaeche: #29201f;
+  --sw-karte: #322726;
+  --sw-karte-2: #3c2f2d;
+  --sw-karte-3: #473836;
+  --sw-mulde: #120d0c;
+  --sw-text: #f6eeec;
+  --sw-text-2: #cbb9b5;
+  --sw-text-3: #9d8783;
+  --sw-rand: rgba(255, 228, 222, 0.08);
+  --sw-rand-stark: rgba(255, 228, 222, 0.16);
+  --sw-schleier: rgba(16, 10, 9, 0.74);
+  --sw-diagrammlinie: rgba(255, 228, 222, 0.07);
+}
+
+:root[data-flaechen="ziegel"][data-theme="hell"] {
+  --sw-grund: #ede4e2;
+  --sw-leiste: #f7f1f0;
+  --sw-flaeche: #fbf7f6;
+  --sw-karte: #ffffff;
+  --sw-karte-2: #efe5e3;
+  --sw-karte-3: #e3d5d2;
+  --sw-mulde: #dccbc8;
+  --sw-text: #261917;
+  --sw-text-2: #5c443f;
+  --sw-text-3: #7f6560;
+  --sw-rand: rgba(52, 28, 24, 0.1);
+  --sw-rand-stark: rgba(52, 28, 24, 0.2);
+  --sw-diagrammlinie: rgba(52, 28, 24, 0.09);
+}

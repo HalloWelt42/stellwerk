@@ -1,0 +1,40 @@
+/*
+ * Ergänzungen zu stil.css, gleich wie in der Oberfläche der Leitstelle: Seiteninhalt füllt den Rahmen (fester Kopf,
+ * eigenes Rollfeld), Ansicht unten in der Seitenleiste, Rückmeldungen, Formularfelder. Seitenstile stehen in den Seiten.
+ */
+
+/* Seiteninhalt füllt den Rahmen: fester Kopf, eigenes Rollfeld */
+.seiteninhalt { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.verbinden { flex: 1; display: grid; place-items: center; }
+
+/* Ansicht unten in der Seitenleiste */
+.seite .ansicht { margin-top: auto; display: flex; flex-direction: column; gap: var(--sw-a2); padding: var(--sw-a3) var(--sw-a1) 0; }
+.seite .ansicht .stufen button { flex: 1; padding: 0 6px; white-space: nowrap; font-size: var(--sw-gr-marke); min-width: 0; }
+.seite .ansicht .stufen { display: flex; }
+@media (max-width: 1240px) { .seite .ansicht { display: none; } }
+
+/* Rückmeldungen gestapelt unten rechts, über der Fußleiste */
+.rueckmeldungen { position: fixed; right: var(--sw-a5); bottom: calc(var(--sw-fuss-hoehe) + var(--sw-a4)); z-index: 40;
+                  display: flex; flex-direction: column; gap: var(--sw-a2); align-items: flex-end; pointer-events: none; }
+.rueckmeldungen .meldung { position: static; pointer-events: auto; max-width: 560px; }
+.rueckmeldungen .meldung.erfolg > i { color: var(--sw-erfolg); }
+.rueckmeldungen .meldung.fehler { border-color: rgba(var(--sw-gefahr-rgb), 0.6); }
+.rueckmeldungen .meldung.fehler > i { color: var(--sw-gefahr); }
+.rueckmeldungen .meldung.hinweis > i { color: var(--sw-info); }
+
+/* Formularfelder: Bezeichnung oben, Feld darunter */
+.feld-l { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.feld-l > span { font-size: var(--sw-gr-klein); color: var(--sw-text-2); }
+.feld-l > span small { display: block; color: var(--sw-text-3); font-size: var(--sw-gr-marke); }
+.feld-l .eingabe { width: 100%; }
+
+/* Symbole in Knöpfen eines leeren Zustands behalten Knopfgröße */
+.leer .knopf i { font-size: inherit; color: inherit; }
+
+/* Hinweise oberhalb von Listen */
+.rollfeld > .hinweis { margin-bottom: var(--sw-a3); }
+
+/* Kleine Listen in Karten */
+.liste { list-style: none; margin: 0 0 var(--sw-a2); padding: 0; display: grid; gap: 6px; font-size: var(--sw-gr-klein); }
+.liste li { display: flex; justify-content: space-between; gap: var(--sw-a3); }
+.liste li b { font-weight: 600; }
