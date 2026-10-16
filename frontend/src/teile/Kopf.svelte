@@ -15,6 +15,7 @@
     <span class="marke-name">Stellwerk</span>
     {#if s}<span class="zahl">{s.version}</span>{/if}
   </div>
+  <span class="rolle" title="Leitstelle verteilt Aufträge, Maschinenraum regelt KI, Stellwerk startet Anwendungen"><i class="fa-solid fa-traffic-light"></i>startet Anwendungen</span>
   {#if s}<span class="rechner" title="Dieser Rechner"><i class="fa-solid fa-desktop"></i>{s.rechner}</span>{/if}
 
   <div class="kopf-aktionen">
