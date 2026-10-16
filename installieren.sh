@@ -5,8 +5,9 @@
 #
 # Legt den Ordner ~/Stellwerk an (oder STELLWERK_ORDNER), installiert das Programm in ein eigenes venv,
 # baut die Oberfläche (wenn Node vorhanden ist) und richtet es als Dienst ein, der Neustarts übersteht:
-# macOS launchd (startet mit der Anmeldung), Linux systemd im Benutzerkontext. Auf dem Mac kommt das
-# Menüleistensymbol dazu. App-Dateien, Einstellungen und Sollzustand bleiben bei einer Aktualisierung.
+# macOS launchd (startet mit der Anmeldung), Linux systemd im Benutzerkontext. Gibt es einen Maschinenraum, trägt
+# sich das Stellwerk dort unter betrieb/ ein: sein Menüleistensymbol ist das zentrale Steuerwerk (Stellwerk starten,
+# anhalten, öffnen, Webapps schalten). App-Dateien, Einstellungen und Sollzustand bleiben bei einer Aktualisierung.
 set -eu
 
 HIER="$(cd "$(dirname "$0")" && pwd)"
@@ -73,24 +74,15 @@ case "$(uname -s)" in
 EOF
     launchd_laden "$KENNUNG" "$PLIST"
     meldung "Stellwerk läuft als launchd-Dienst $KENNUNG (startet mit der Anmeldung)."
-    if [ -x "$HIER/menueleiste/bauen.sh" ] && command -v swiftc >/dev/null; then
-      "$HIER/menueleiste/bauen.sh" "$HOME/Applications" "$PORT"
-      MPLIST="$HOME/Library/LaunchAgents/$KENNUNG.menueleiste.plist"
-      cat > "$MPLIST" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>$KENNUNG.menueleiste</string>
-  <key>ProgramArguments</key><array><string>$HOME/Applications/Stellwerk.app/Contents/MacOS/Stellwerk</string></array>
-  <key>RunAtLoad</key><true/>
-  <key>ProcessType</key><string>Interactive</string>
-</dict>
-</plist>
-EOF
-      launchd_laden "$KENNUNG.menueleiste" "$MPLIST"
-      meldung "Menüleistensymbol eingerichtet (~/Applications/Stellwerk.app)."
+    # Früheres eigenes Menüleistensymbol: ersetzt durch das des Maschinenraums
+    if [ -f "$HOME/Library/LaunchAgents/$KENNUNG.menueleiste.plist" ]; then
+      launchctl bootout "gui/$(id -u)/$KENNUNG.menueleiste" 2>/dev/null || true
+      rm -f "$HOME/Library/LaunchAgents/$KENNUNG.menueleiste.plist"
+      rm -rf "$HOME/Applications/Stellwerk.app"
+      meldung "Eigenes Menüleistensymbol entfernt; das Stellwerk steht jetzt im Symbol des Maschinenraums."
     fi
+    STARTEN="[\"launchctl\", \"bootstrap\", \"gui/$(id -u)\", \"$PLIST\"]"
+    ANHALTEN="[\"launchctl\", \"bootout\", \"gui/$(id -u)/$KENNUNG\"]"
     ;;
   Linux)
     UNIT="$HOME/.config/systemd/user/$KENNUNG.service"
@@ -115,12 +107,37 @@ EOF
     systemctl --user enable --now "$KENNUNG.service"
     systemctl --user restart "$KENNUNG.service"
     meldung "Stellwerk läuft als systemd-Dienst im Benutzerkontext."
+    STARTEN="[\"systemctl\", \"--user\", \"start\", \"$KENNUNG.service\"]"
+    ANHALTEN="[\"systemctl\", \"--user\", \"stop\", \"$KENNUNG.service\"]"
     if [ "$(loginctl show-user "$(id -un)" -p Linger --value 2>/dev/null || echo no)" != "yes" ]; then
       meldung "Damit er ohne Anmeldung startet, einmal mit Verwalterrechten: sudo loginctl enable-linger $(id -un)"
     fi
     ;;
   *) abbruch "unbekanntes Betriebssystem $(uname -s)" ;;
 esac
+
+# ── Im Maschinenraum eintragen (zentrales Steuerwerk), wenn es einen gibt ──
+MASCHINENRAUM="${MASCHINENRAUM_ORDNER:-$HOME/Maschinenraum}"
+if [ -d "$MASCHINENRAUM" ]; then
+  mkdir -p "$MASCHINENRAUM/betrieb"
+  cat > "$MASCHINENRAUM/betrieb/$KENNUNG.toml" <<EINTRAG_ENDE
+# Vom Installationsskript des Stellwerks geschrieben; wird bei jeder Installation erneuert.
+name = "Stellwerk"
+beschreibung = "Startet Anwendungen: die eigenen Webapps dieses Rechners, nativ oder mit Docker"
+ordner = "~"
+steuerung = "befehle"
+befehl = $STARTEN
+anhaltebefehl = $ANHALTEN
+port = $PORT
+oberflaeche = "http://127.0.0.1:$PORT"
+prozessmuster = "-m stellwerk( |$)"
+speicher_gb = 0.2
+startzeit_s = 60
+anhaltezeit_s = 60
+neustart = false
+EINTRAG_ENDE
+  meldung "Im Maschinenraum unter Betrieb eingetragen ($MASCHINENRAUM/betrieb/$KENNUNG.toml)."
+fi
 
 meldung "Oberfläche: http://127.0.0.1:$PORT/"
 meldung "Ordner: $ORDNER (Webapps unter apps/, Ausgaben unter protokolle/)"

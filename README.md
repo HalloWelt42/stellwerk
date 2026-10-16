@@ -6,7 +6,8 @@ startet die ganze Webapp in der Reihenfolge ihrer Abhängigkeiten und hält sie 
 Projekte irgendwo im Hintergrund laufen, steht hier, was läuft, was es belegt und was es ausgibt.
 
 - **Oberfläche im Browser** unter `http://127.0.0.1:8550/`, nur auf diesem Rechner erreichbar.
-- **Menüleistensymbol** auf dem Mac: Webapps mit Schaltern, Öffnen im Browser.
+- **Im zentralen Steuerwerk:** Das Stellwerk trägt sich bei der Installation im [Maschinenraum](https://github.com/HalloWelt42/maschinenraum)
+  ein. Dessen Menüleistensymbol startet, hält an und öffnet das Stellwerk und schaltet die Webapps.
 - **Übersteht Neustarts:** läuft als launchd- oder systemd-Dienst; was laufen soll, startet wieder.
 - **Abstürze** einzelner Teile werden mit Pausen neu gestartet; stürzt ein Teil zu oft ab, bleibt er aus.
 - **Docker bei Bedarf:** startet ein Docker-Teil, startet das Stellwerk vorher Docker; angehalten wird Docker nur von
@@ -30,14 +31,16 @@ es schaltet nur Webapps.
 
 ## Installieren
 
-Python 3.11 oder neuer; für die Oberfläche Node, für das Menüleistensymbol die Befehlszeilenwerkzeuge von Xcode.
+Python 3.11 oder neuer; für die Oberfläche Node.
 
 ```bash
 git clone https://github.com/HalloWelt42/stellwerk.git && cd stellwerk && ./installieren.sh
 ```
 
 Das Skript legt den Ordner `~/Stellwerk` an, installiert das Programm in ein eigenes venv und richtet es als Dienst
-ein. Derselbe Befehl aktualisiert; App-Dateien, Einstellungen und Sollzustand bleiben.
+ein. Derselbe Befehl aktualisiert; App-Dateien, Einstellungen und Sollzustand bleiben. Gibt es einen Maschinenraum
+(`~/Maschinenraum`), schreibt das Skript dort `betrieb/stellwerk.toml`: so lässt sich das Stellwerk aus dem Maschinenraum
+und seinem Menüleistensymbol starten, anhalten und öffnen.
 
 ## Der Ordner
 
@@ -64,7 +67,7 @@ dann mit einer lesbaren Meldung übergangen. Eine Datei mit `faehigkeiten` gehö
 |---|---|---|
 | `name` | Pflicht | Anzeigename der Webapp |
 | `beschreibung` | leer | ein Satz für die Oberfläche |
-| `oberflaeche` | keine | Adresse der Webapp im Browser; Karte und Menüleiste bekommen einen Knopf zum Öffnen |
+| `oberflaeche` | keine | Adresse der Webapp im Browser; Karte und Menüleiste des Maschinenraums bekommen einen Knopf zum Öffnen |
 | `[[teile]]` | mindestens einer | die Teile der Webapp, siehe unten |
 
 Je Teil:
