@@ -1,4 +1,6 @@
 // Weg durch die Seiten: echte Pfade (/apps, /protokoll ...); das Stellwerk liefert für jeden Pfad index.html.
+// Ein Seitenwechsel ist der ruhige Moment für eine neue Fassung (die Adresse steht schon, das Neuladen landet dort).
+import { nachOrtswechsel } from './fassung.svelte';
 
 export type Seite = 'uebersicht' | 'apps' | 'protokoll' | 'ordner';
 
@@ -20,6 +22,7 @@ class Weg {
       const w = lesen();
       this.seite = w.seite;
       this.teil = w.teil;
+      nachOrtswechsel();
     });
   }
 
@@ -29,9 +32,11 @@ class Weg {
 
   gehe(seite: Seite, teil: string | null = null, ersetzen = false): void {
     const ziel = this.pfad(seite, teil);
-    if (ziel !== location.pathname) (ersetzen ? history.replaceState : history.pushState).call(history, null, '', ziel);
+    const wechsel = ziel !== location.pathname;
+    if (wechsel) (ersetzen ? history.replaceState : history.pushState).call(history, null, '', ziel);
     this.seite = seite;
     this.teil = teil;
+    if (wechsel) nachOrtswechsel();
   }
 
   /** Für <a href>: normale Klicks bleiben in der Oberfläche, Mittelklick öffnet einen neuen Reiter */

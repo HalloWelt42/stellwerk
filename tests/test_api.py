@@ -1,11 +1,13 @@
-"""Schnittstelle: Stand, Schalten je Webapp, Protokolle, Schutz."""
+"""Schnittstelle: Stand, Schalten je Webapp, Protokolle, Schutz, Fassung und Auslieferung der Oberfläche."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
+from stellwerk import __version__, api
 from stellwerk.api import erstellen
 
 from hilfen import freier_port, offen, server, stellwerk
@@ -36,3 +38,19 @@ def test_stand_schalten_und_protokoll(tmp_path: Path):
         r = c.post("/api/apps/probe/anhalten", headers=SCHREIBEN).json()
         assert r["erfolg"] and not offen(port)
         assert c.get("/api/stand", headers={"host": "boese.example"}).status_code == 403
+
+
+def test_fassung_und_auslieferung_der_oberflaeche(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Die Oberfläche vergleicht ihre Fassung mit /api/version; die Startseite kommt ohne Zwischenspeicher, auch für HEAD."""
+    wurzel = (tmp_path / "oberflaeche").resolve()
+    (wurzel / "assets").mkdir(parents=True)
+    (wurzel / "index.html").write_text("<!doctype html>")
+    (wurzel / "assets" / "index-abc123.js").write_text("")
+    monkeypatch.setattr(api, "OBERFLAECHE", wurzel)
+    with TestClient(erstellen(stellwerk(tmp_path / "ordner", {})), base_url="http://127.0.0.1") as c:
+        assert c.get("/api/version").json() == {"version": __version__}
+        for methode in ("GET", "HEAD"):
+            for pfad in ("/", "/apps/probe"):
+                a = c.request(methode, pfad)
+                assert a.status_code == 200 and a.headers["cache-control"] == "no-cache", (methode, pfad)
+            assert "immutable" in c.request(methode, "/assets/index-abc123.js").headers["cache-control"]

@@ -1,6 +1,7 @@
 // Zugriff auf die lokale Schnittstelle /api/*. Schreibende Aufrufe tragen den Kopf X-Stellwerk,
-// den fremde Webseiten nicht setzen dürfen.
-import type { Ergebnis, Protokollauszug, Stand } from './typen.gen';
+// den fremde Webseiten nicht setzen dürfen, und zählen als laufende Arbeit, solange ihre Antwort aussteht.
+import { arbeit } from './arbeit.svelte';
+import type { Ergebnis, Fassung, Protokollauszug, Stand } from './typen.gen';
 
 export class ApiFehler extends Error {
   constructor(public grund: string, public begruendung: string, public status: number) {
@@ -8,7 +9,11 @@ export class ApiFehler extends Error {
   }
 }
 
-async function rufen<T>(pfad: string, methode = 'GET'): Promise<T> {
+function rufen<T>(pfad: string, methode = 'GET'): Promise<T> {
+  return methode === 'GET' ? senden<T>(pfad, methode) : arbeit.rahmen(() => senden<T>(pfad, methode));
+}
+
+async function senden<T>(pfad: string, methode: string): Promise<T> {
   const kopf: Record<string, string> = methode === 'GET' ? {} : { 'X-Stellwerk': '1' };
   const antwort = await fetch(`/api${pfad}`, { method: methode, headers: kopf });
   const text = await antwort.text();
@@ -26,6 +31,7 @@ export type Schaltung = 'starten' | 'anhalten' | 'neustarten';
 export type Protokollziel = { art: 'stellwerk' } | { art: 'docker' } | { art: 'teil'; app: string; teil: string };
 
 export const api = {
+  version: () => rufen<Fassung>('/version'),
   stand: () => rufen<Stand>('/stand'),
   app: (k: string, s: Schaltung) => rufen<Ergebnis>(`/apps/${encodeURIComponent(k)}/${s}`, 'POST'),
   docker: (s: 'starten' | 'anhalten') => rufen<Ergebnis>(`/docker/${s}`, 'POST'),

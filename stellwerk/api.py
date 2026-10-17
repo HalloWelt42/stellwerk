@@ -80,6 +80,12 @@ class Stand(BaseModel):
     ladefehler: list[Ladefehler]
 
 
+class Fassung(BaseModel):
+    """Fassung des laufenden Programms; die Oberfläche vergleicht sie mit ihrer eingebauten und lädt bei Abweichung neu."""
+
+    version: str
+
+
 def _teil(t: Teil, d: Dienst) -> TeilAnsicht:
     b = d.bericht()
     return TeilAnsicht(kennung=t.kennung, name=t.name, art=t.art, port=b.port, zustand=b.zustand, fremd=b.fremd, gb_jetzt=b.gb_jetzt,
@@ -156,6 +162,10 @@ def erstellen(ordner: Ordner) -> FastAPI:
     @app.get("/api/stand")
     async def stand() -> Stand:
         return lz.stand()
+
+    @app.get("/api/version")
+    async def fassung() -> Fassung:
+        return Fassung(version=__version__)
 
     @app.post("/api/apps/{kennung}/starten")
     async def starten(kennung: str) -> Ergebnis:

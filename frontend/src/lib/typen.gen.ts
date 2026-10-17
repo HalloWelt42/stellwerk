@@ -23,6 +23,7 @@ export type Zustand = 'aus' | 'startet' | 'laeuft' | 'stoppt' | 'gestoert';
 
 export interface Stellwerk {
   Stand?: Stand;
+  Fassung?: Fassung;
   Ergebnis?: Ergebnis;
   Protokollauszug?: Protokollauszug;
 }
@@ -180,6 +181,15 @@ export interface DockerAnsicht {
 export interface Ladefehler {
   datei: string;
   meldung: string;
+}
+/**
+ * Fassung des laufenden Programms; die Oberfläche vergleicht sie mit ihrer eingebauten und lädt bei Abweichung neu.
+ *
+ * This interface was referenced by `Stellwerk`'s JSON-Schema
+ * via the `definition` "Fassung".
+ */
+export interface Fassung {
+  version: string;
 }
 /**
  * This interface was referenced by `Stellwerk`'s JSON-Schema

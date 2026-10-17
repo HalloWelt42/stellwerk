@@ -14,10 +14,10 @@ from dienstkern.web import Protokollauszug
 from pydantic import BaseModel
 from pydantic.json_schema import models_json_schema
 
-from .api import Stand
+from .api import Fassung, Stand
 
 # Antworten: jedes Feld wird immer mitgeschickt, auch mit Vorgabewert (auch in eingebetteten Modellen)
-AUSGABE: list[type[BaseModel]] = [Stand, Ergebnis, Protokollauszug]
+AUSGABE: list[type[BaseModel]] = [Stand, Fassung, Ergebnis, Protokollauszug]
 
 
 def schema() -> dict:

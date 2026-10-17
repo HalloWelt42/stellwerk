@@ -126,6 +126,7 @@ aber nicht doppelt.
 | Aufruf | Wirkung |
 |---|---|
 | `GET /api/stand` | alle Webapps mit ihren Teilen, Docker, fehlerhafte Dateien |
+| `GET /api/version` | Fassung des laufenden Programms; weicht sie von der eingebauten ab, lädt die Oberfläche von selbst neu |
 | `POST /api/apps/<kennung>/starten`, `/anhalten`, `/neustarten` | ganze Webapp schalten; Antwort mit Erfolg und Meldung |
 | `GET /api/apps/<kennung>/teile/<teil>/protokoll?zeilen=200` | Ende der Protokolldatei eines Teils |
 | `POST /api/docker/starten`, `/anhalten` | Docker schalten; anhalten nur, wenn kein Docker-Teil läuft |
