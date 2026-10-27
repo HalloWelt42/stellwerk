@@ -58,7 +58,7 @@
 
 <style>
   .liste-apps { display: flex; flex-direction: column; gap: var(--sw-a3); overflow-x: clip; }
-  .liste-apps :global(.app), .liste-apps :global(.docker) { margin: 0; max-width: 1100px; }
+  .liste-apps :global(.app), .liste-apps :global(.docker) { margin: 0; }
   .raster-kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: var(--sw-a3); }
   .raster-kacheln :global(.karte + .karte) { margin-top: 0; }
   .stufen button { display: inline-flex; align-items: center; gap: 7px; }

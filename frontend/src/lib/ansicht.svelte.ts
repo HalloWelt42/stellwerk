@@ -26,7 +26,7 @@ function merken(schluessel: string, wert: string): void {
 class Ansicht {
   thema = $state<Thema>(lesen('thema', ['dunkel', 'hell'] as const, 'dunkel'));
   schrift = $state<Schrift>(lesen('schrift', ['klein', 'mittel', 'gross'] as const, 'gross'));
-  apps = $state<AppAnsichtArt>(lesen('apps', ['liste', 'karten'] as const, 'liste'));
+  apps = $state<AppAnsichtArt>(lesen('apps', ['liste', 'karten'] as const, 'karten'));
 
   setzeThema(t: Thema): void {
     this.thema = t;
