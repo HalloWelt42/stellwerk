@@ -1,5 +1,7 @@
 <script lang="ts">
-  // Kopf wie in der Leitstelle: Marke links, rechts die Lage der Webapps
+  // Kopf wie in der Leitstelle: Marke mit Kurzzweck links (damit man Stellwerk, Maschinenraum, Leitstelle und Fundus
+  // nie verwechselt), rechts die Lage der Webapps
+  import { MARKE } from '../lib/marke';
   import { lage } from '../lib/stand.svelte';
   import { istAn } from '../lib/wort';
   import { weg } from '../lib/weg.svelte';
@@ -12,10 +14,10 @@
 <header class="kopf">
   <div class="marke">
     <img class="marke-bild" src="/symbol.svg" alt="" />
-    <span class="marke-name">Stellwerk</span>
+    <span class="marke-name">{MARKE.name}</span>
+    <span class="marke-zweck" title="Startet und stoppt die eigenen Webapps dieses Rechners. KI-Dienste stehen im Maschinenraum, KI-Aufträge vermittelt die Leitstelle.">{MARKE.zweck}</span>
     {#if s}<span class="zahl">{s.version}</span>{/if}
   </div>
-  <span class="rolle" title="Leitstelle verteilt Aufträge, Maschinenraum regelt KI, Stellwerk startet Anwendungen"><i class="fa-solid fa-traffic-light"></i>startet Anwendungen</span>
   {#if s}<span class="rechner" title="Dieser Rechner"><i class="fa-solid fa-desktop"></i>{s.rechner}</span>{/if}
 
   <div class="kopf-aktionen">
@@ -25,7 +27,7 @@
       <a class="lage {gestoert.length ? 'engpass' : 'ruhig'}" href={weg.pfad('apps')} onclick={(e) => weg.klick(e, 'apps')}
          title={gestoert.length ? `Gestört: ${gestoert.map((a) => a.name).join(', ')}` : 'Webapps, die laufen'}>
         <span class="punkt" class:lebt={!gestoert.length && laufen > 0} class:gefahr={gestoert.length > 0} class:aus={!gestoert.length && !laufen}></span>
-        {gestoert.length ? `${gestoert.length} gestört` : `${laufen} von ${s.apps.length} Webapps laufen`}</a>
+        {#if gestoert.length}{gestoert.length} gestört{:else}{laufen} von {s.apps.length}<span class="lang">&nbsp;Webapps</span> laufen{/if}</a>
     {/if}
   </div>
 </header>
@@ -33,5 +35,9 @@
 <style>
   .rechner { display: inline-flex; align-items: center; gap: var(--sw-a2); color: var(--sw-text-2); white-space: nowrap; }
   .rechner i { color: var(--sw-text-3); }
-  a.lage { text-decoration: none; }
+  a.lage { text-decoration: none; white-space: nowrap; }
+  /* Telefon: Marke mit Namen und die Lage; Zweck steht im Titel des Reiters */
+  @media (max-width: 600px) {
+    .rechner, .marke-zweck, .lang { display: none; }
+  }
 </style>

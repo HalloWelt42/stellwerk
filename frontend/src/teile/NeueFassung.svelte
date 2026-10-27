@@ -15,6 +15,8 @@
 {/if}
 
 <style>
-  .neue-fassung { flex: none; align-items: center; margin: var(--sw-a3) var(--sw-a6) 0; }
+  /* schmal rückt der Knopf unter den Text, statt ihn zusammenzudrücken */
+  .neue-fassung { flex: none; flex-wrap: wrap; align-items: center; margin: var(--sw-a3) var(--sw-a6) 0; }
   .neue-fassung > i { margin-top: 0; }
+  .neue-fassung > span { flex: 1 1 9em; }
 </style>

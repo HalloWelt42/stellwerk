@@ -34,6 +34,7 @@ export const api = {
   version: () => rufen<Fassung>('/version'),
   stand: () => rufen<Stand>('/stand'),
   app: (k: string, s: Schaltung) => rufen<Ergebnis>(`/apps/${encodeURIComponent(k)}/${s}`, 'POST'),
+  teil: (k: string, t: string, s: Schaltung) => rufen<Ergebnis>(`/apps/${encodeURIComponent(k)}/teile/${encodeURIComponent(t)}/${s}`, 'POST'),
   docker: (s: 'starten' | 'anhalten') => rufen<Ergebnis>(`/docker/${s}`, 'POST'),
   protokoll: (z: Protokollziel, zeilen = 300) =>
     rufen<Protokollauszug>(z.art === 'stellwerk' ? `/protokoll?zeilen=${zeilen}` : z.art === 'docker' ? `/docker/protokoll?zeilen=${zeilen}`

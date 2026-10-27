@@ -41,6 +41,17 @@
   /* Tönung farbiger Marken (Fähigkeit, Zustand, Chips): je Farbwelt stärker */
   --sw-tint: 0.16;
 
+  /* Schrift getönter Marken (Zustand, Zähler, Chips, gewählte Stufe): die Bedeutungsfarbe, in farben.css je Thema mit
+     30 % Grundschrift gemischt, damit sie auf ihrer eigenen Tönung lesbar bleibt (Kontrast über 3). Feste Werte statt
+     color-mix, damit die Ansichtsprüfung sie misst. Ohne eigene Werte gilt die Bedeutungsfarbe selbst. */
+  --sw-akzent-marke: var(--sw-akzent-schrift);
+  --sw-erfolg-marke: var(--sw-erfolg);
+  --sw-warnung-marke: var(--sw-warnung);
+  --sw-gefahr-marke: var(--sw-gefahr);
+  --sw-info-marke: var(--sw-info);
+  --sw-honig-marke: var(--sw-honig);
+  --sw-sand-marke: var(--sw-sand);
+
   --sw-kopf-hoehe: 62px;
   --sw-seite-breite: 264px;
   --sw-fuss-hoehe: 44px;
@@ -312,9 +323,8 @@ code, .code { font-family: var(--sw-schrift-code); font-size: 0.92em; background
 .marke { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 21px; letter-spacing: 0.02em; min-width: calc(var(--sw-seite-breite) - var(--sw-a4)); flex-shrink: 0; }
 .marke-bild { width: 36px; height: 36px; display: block; }   /* freigestelltes Symbol, kein Kasten */
 .marke .zahl { font-size: var(--sw-gr-marke); font-weight: 600; color: var(--sw-text-3); margin-left: 2px; align-self: flex-end; padding-bottom: 3px; }
-/* Rolle im Verbund neben der Marke, damit man auf einen Blick sieht, wofür dieses Programm da ist */
-.rolle { display: inline-flex; align-items: center; gap: var(--sw-a2); color: var(--sw-text-2); font-size: var(--sw-gr-klein); white-space: nowrap; }
-.rolle i { color: var(--sw-akzent-schrift); }
+/* Kurzzweck neben dem Namen, damit man auf einen Blick sieht, wofür dieses Programm da ist (lib/marke.ts) */
+.marke-zweck { font-size: var(--sw-gr-text); font-weight: 500; letter-spacing: 0; color: var(--sw-text-2); white-space: nowrap; }
 .suche {
   flex: 1; max-width: 560px; min-width: 220px; display: flex; align-items: center; gap: var(--sw-a2);
   height: 42px; padding: 0 var(--sw-a3); background: var(--sw-karte); border: 1px solid var(--sw-rand);
@@ -381,8 +391,8 @@ code, .code { font-family: var(--sw-schrift-code); font-size: 0.92em; background
 .navi.aktiv { background: var(--sw-karte-2); color: var(--sw-text); }
 .navi.aktiv i { color: var(--symbolfarbe, var(--sw-akzent-schrift)); }
 .navi .zaehler { margin-left: auto; }
-.navi .zaehler.warnung { background: rgba(var(--sw-warnung-rgb), var(--sw-tint)); color: var(--sw-warnung); }
-.navi .zaehler.gefahr { background: rgba(var(--sw-gefahr-rgb), var(--sw-tint)); color: var(--sw-gefahr); }
+.navi .zaehler.warnung { background: rgba(var(--sw-warnung-rgb), var(--sw-tint)); color: var(--sw-warnung-marke); }
+.navi .zaehler.gefahr { background: rgba(var(--sw-gefahr-rgb), var(--sw-tint)); color: var(--sw-gefahr-marke); }
 
 .schale > .haupt { grid-area: haupt; overflow-y: auto; padding: var(--sw-a5) var(--sw-a6) var(--sw-a6); min-width: 0; }
 .fuss {
@@ -425,7 +435,7 @@ code, .code { font-family: var(--sw-schrift-code); font-size: 0.92em; background
   transition: background var(--sw-schnell), border-color var(--sw-schnell);
 }
 .knopf:hover { background: var(--sw-karte-3); }
-.knopf.aktiv { background: var(--sw-karte-3); border-color: rgba(var(--sw-akzent-rgb), 0.7); color: var(--sw-akzent-schrift); }
+.knopf.aktiv { background: var(--sw-karte-3); border-color: rgba(var(--sw-akzent-rgb), 0.7); color: var(--sw-akzent-marke); }
 .knopf.haupt { background: var(--sw-akzent); color: var(--sw-akzent-text); border-color: transparent; }
 .knopf.haupt:hover { filter: brightness(1.06); }
 .knopf.ohne { background: transparent; border-color: transparent; color: var(--sw-text-2); }
@@ -444,14 +454,14 @@ code, .code { font-family: var(--sw-schrift-code); font-size: 0.92em; background
   font-size: var(--sw-gr-marke); font-weight: 700; font-variant-numeric: tabular-nums;
   background: var(--sw-karte-2); color: var(--sw-text-2); border-radius: var(--sw-ecke-klein);
 }
-.zaehler.akzent { background: rgba(var(--sw-akzent-rgb), var(--sw-tint)); color: var(--sw-akzent-schrift); }
+.zaehler.akzent { background: rgba(var(--sw-akzent-rgb), var(--sw-tint)); color: var(--sw-akzent-marke); }
 /* Pillen: Zahl, wo etwas Bedeutsames passiert (Seitenleiste, Reiter); Farbe nach Bedeutung, nie Gesamtzahlen */
 .pille { border-radius: 11px; min-width: 24px; height: 22px; padding: 0 7px; }
-.zaehler.gefahr { background: rgba(var(--sw-gefahr-rgb), var(--sw-tint)); color: var(--sw-gefahr); }
-.zaehler.warnung { background: rgba(var(--sw-warnung-rgb), var(--sw-tint)); color: var(--sw-warnung); }
-.zaehler.info { background: rgba(var(--sw-info-rgb), var(--sw-tint)); color: var(--sw-info); }
-.zaehler.erfolg { background: rgba(var(--sw-erfolg-rgb), var(--sw-tint)); color: var(--sw-erfolg); }
-.zaehler.honig { background: rgba(var(--sw-honig-rgb), var(--sw-tint)); color: var(--sw-honig); }
+.zaehler.gefahr { background: rgba(var(--sw-gefahr-rgb), var(--sw-tint)); color: var(--sw-gefahr-marke); }
+.zaehler.warnung { background: rgba(var(--sw-warnung-rgb), var(--sw-tint)); color: var(--sw-warnung-marke); }
+.zaehler.info { background: rgba(var(--sw-info-rgb), var(--sw-tint)); color: var(--sw-info-marke); }
+.zaehler.erfolg { background: rgba(var(--sw-erfolg-rgb), var(--sw-tint)); color: var(--sw-erfolg-marke); }
+.zaehler.honig { background: rgba(var(--sw-honig-rgb), var(--sw-tint)); color: var(--sw-honig-marke); }
 .zaehler.neutral { background: var(--sw-karte-2); color: var(--sw-text-2); }
 .reiter button .zaehler.pille { margin-left: 2px; }
 
@@ -484,14 +494,14 @@ code, .code { font-family: var(--sw-schrift-code); font-size: 0.92em; background
   font-size: var(--sw-gr-marke); font-weight: 700; border-radius: var(--sw-ecke-klein);
   background: var(--sw-karte-2); color: var(--sw-text-2);
 }
-.zustand.laeuft { background: rgba(var(--sw-akzent-rgb), var(--sw-tint)); color: var(--sw-akzent-schrift); }
-.zustand.fertig { background: rgba(var(--sw-erfolg-rgb), var(--sw-tint)); color: var(--sw-erfolg); }
-.zustand.fehler { background: rgba(var(--sw-gefahr-rgb), var(--sw-tint)); color: var(--sw-gefahr); }
-.zustand.wartet { background: rgba(var(--sw-info-rgb), var(--sw-tint)); color: var(--sw-info); }
-.zustand.pausiert { background: rgba(var(--sw-honig-rgb), var(--sw-tint)); color: var(--sw-honig); }
-.zustand.auslaufend { background: rgba(var(--sw-warnung-rgb), var(--sw-tint)); color: var(--sw-warnung); }
+.zustand.laeuft { background: rgba(var(--sw-akzent-rgb), var(--sw-tint)); color: var(--sw-akzent-marke); }
+.zustand.fertig { background: rgba(var(--sw-erfolg-rgb), var(--sw-tint)); color: var(--sw-erfolg-marke); }
+.zustand.fehler { background: rgba(var(--sw-gefahr-rgb), var(--sw-tint)); color: var(--sw-gefahr-marke); }
+.zustand.wartet { background: rgba(var(--sw-info-rgb), var(--sw-tint)); color: var(--sw-info-marke); }
+.zustand.pausiert { background: rgba(var(--sw-honig-rgb), var(--sw-tint)); color: var(--sw-honig-marke); }
+.zustand.auslaufend { background: rgba(var(--sw-warnung-rgb), var(--sw-tint)); color: var(--sw-warnung-marke); }
 .zustand.aus { background: var(--sw-karte); color: var(--sw-text-3); }
-.zustand.wartung { background: rgba(var(--sw-sand-rgb), var(--sw-tint)); color: var(--sw-sand); }
+.zustand.wartung { background: rgba(var(--sw-sand-rgb), var(--sw-tint)); color: var(--sw-sand-marke); }
 .zustand i.fa-spin, .zustand .dreht { animation: drehen 1.6s linear infinite; }
 @keyframes drehen { to { transform: rotate(360deg); } }
 
@@ -510,7 +520,7 @@ code, .code { font-family: var(--sw-schrift-code); font-size: 0.92em; background
   color: var(--sw-text-2); font-size: var(--sw-gr-klein); font-weight: 500; cursor: pointer;
 }
 .chip:hover { color: var(--sw-text); border-color: var(--sw-rand-stark); }
-.chip.aktiv { background: rgba(var(--sw-akzent-rgb), var(--sw-tint)); border-color: rgba(var(--sw-akzent-rgb), 0.55); color: var(--sw-akzent-schrift); }
+.chip.aktiv { background: rgba(var(--sw-akzent-rgb), var(--sw-tint)); border-color: rgba(var(--sw-akzent-rgb), 0.55); color: var(--sw-akzent-marke); }
 .chip .zaehler { height: 22px; min-width: 24px; background: var(--sw-karte-2); }
 
 .eingabe {
@@ -691,7 +701,7 @@ select.eingabe { padding-right: var(--sw-a5); }
 .stufen { display: inline-flex; background: var(--sw-karte); border: 1px solid var(--sw-rand); border-radius: var(--sw-ecke); overflow: hidden; }
 .stufen button { height: 36px; min-width: 44px; padding: 0 var(--sw-a3); border: 0; background: none; color: var(--sw-text-2); font-weight: 600; font-size: var(--sw-gr-klein); cursor: pointer; }
 .stufen button + button { box-shadow: inset 1px 0 0 var(--sw-rand); }
-.stufen button.an { background: var(--sw-karte-3); color: var(--sw-akzent-schrift); }
+.stufen button.an { background: var(--sw-karte-3); color: var(--sw-akzent-marke); }
 
 /* Mini-i-Knopf: Tiefenlink in die Hilfe */
 .hilfepunkt { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--sw-rand-stark);
@@ -812,9 +822,8 @@ select.eingabe { padding-right: var(--sw-a5); }
 }
 @media (max-width: 1240px) {
   :root { --sw-seite-breite: 72px; }
-  .marke { min-width: 0; gap: 0; }
-  .marke .marke-name, .marke .zahl { display: none; }
-  .rolle { display: none; }
+  .marke { min-width: 0; }
+  .marke .zahl { display: none; }
   .seite { padding: var(--sw-a3) var(--sw-a2); align-items: stretch; }
   .seite .etikett { display: none; }
   .seite .navi { font-size: 0; justify-content: center; padding: 11px 0; }

@@ -10,7 +10,7 @@ export const prozent = (anteil: number): string => `${ganz.format(Math.round(ant
 /** Zahl mit fester Zahl an Nachkommastellen, deutsches Komma */
 export const komma = (n: number, stellen = 1): string => n.toLocaleString('de-DE', { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
 
-/** Dauer in Worten: 4 s, 2 Minuten 10 s, 3 Stunden 5 Minuten */
+/** Dauer in Worten: 4 s, 2 Minuten 10 s, 3 Stunden 5 Minuten, 2 Tage 4 Stunden */
 export function dauer(s: number | null | undefined): string {
   if (s == null || !isFinite(s)) return '-';
   if (s < 10) return `${eins.format(Math.max(0, s))} s`;
@@ -18,8 +18,13 @@ export function dauer(s: number | null | undefined): string {
   const min = Math.floor(s / 60);
   if (min < 60) return `${min} ${min === 1 ? 'Minute' : 'Minuten'}${s % 60 >= 1 && min < 10 ? ` ${Math.round(s % 60)} s` : ''}`;
   const std = Math.floor(min / 60);
-  return `${std} ${std === 1 ? 'Stunde' : 'Stunden'}${min % 60 ? ` ${min % 60} ${min % 60 === 1 ? 'Minute' : 'Minuten'}` : ''}`;
+  if (std < 24) return `${std} ${std === 1 ? 'Stunde' : 'Stunden'}${min % 60 ? ` ${min % 60} ${min % 60 === 1 ? 'Minute' : 'Minuten'}` : ''}`;
+  const tage = Math.floor(std / 24);
+  return `${tage} ${tage === 1 ? 'Tag' : 'Tage'}${std % 24 ? ` ${std % 24} ${std % 24 === 1 ? 'Stunde' : 'Stunden'}` : ''}`;
 }
+
+/** Prozessorlast als Kerne: aus Prozent eines Kerns (100 % = ein ganzer Kern), eine Nachkommastelle */
+export const kerne = (prozent: number | null | undefined): string => (prozent == null ? '-' : komma(prozent / 100, 1));
 
 /** Uhrzeit zu Sekunden seit 1970; älter als heute mit Tag */
 export function uhrzeit(zeit_s: number | null | undefined, mitSekunden = false): string {

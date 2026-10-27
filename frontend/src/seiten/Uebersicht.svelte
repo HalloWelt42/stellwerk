@@ -8,6 +8,7 @@
   import DockerKarte from '../teile/DockerKarte.svelte';
   import Protokoll from '../teile/Protokoll.svelte';
   import Schalter from '../teile/Schalter.svelte';
+  import Zweck from '../teile/Zweck.svelte';
 
   let { stand: s }: { stand: Stand } = $props();
 
@@ -38,7 +39,8 @@
           {#each s.apps as a (a.kennung)}
             {@const z = APPZUSTAND[a.zustand]}
             <div class="appzeile">
-              <div class="name"><a href={weg.pfad('apps')} onclick={(e) => weg.klick(e, 'apps')}>{a.name}</a>
+              <div class="name"><a href={weg.pfad('apps', a.kennung)} onclick={(e) => weg.klick(e, 'apps', a.kennung)}>{a.name}</a>
+                <Zweck zweck={a.zweck} />
                 <span class="zustand {z.klasse}"><i class="fa-solid {z.symbol}"></i>{z.wort}</span>
                 {#each a.arten as art (art)}<span class="leise klein" title={ART[art].satz}><i class="fa-solid {ART[art].symbol}"></i> {ART[art].wort}</span>{/each}</div>
               <div class="werte" title="Teile, die laufen, und was sie belegen">

@@ -11,7 +11,7 @@
     ...s.apps.flatMap((a) => a.teile.map((t) => ({ pfad: `${a.kennung}/${t.kennung}`, name: `${a.name} ${t.name}`, symbol: 'fa-gear',
                                                   ziel: { art: 'teil', app: a.kennung, teil: t.kennung } as Protokollziel }))),
   ]);
-  const gewaehlt = $derived(reiter.find((r) => r.pfad === weg.teil) ?? null);
+  const gewaehlt = $derived(reiter.find((r) => r.pfad === weg.rest) ?? null);
 </script>
 
 <div class="seiteninhalt seite-protokoll">

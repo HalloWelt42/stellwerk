@@ -7,7 +7,7 @@
   const e = $derived(s.einstellungen);
   const pfade = $derived([
     ['Ordner', s.ordner, 'alles an einem Ort'],
-    ['Einstellungen', `${s.ordner}/einstellungen.toml`, 'Oberfläche, Messung, Neustartregeln, Docker'],
+    ['Einstellungen', `${s.ordner}/einstellungen.toml`, 'Oberfläche, Messung, Neustartregeln, Docker, Prüfung äußerer Abhängigkeiten'],
     ['Webapps', `${s.ordner}/apps/`, 'je Webapp eine Datei mit ihren Teilen; der Dateiname ist die Kennung'],
     ['Protokolle', `${s.ordner}/protokolle/`, 'Ausgabe des Stellwerks und je Teil eine Datei'],
     ['Zustand', `${s.ordner}/zustand.json`, 'Sollzustand je Teil und gemessene Höchstwerte'],
@@ -37,6 +37,7 @@
           <dt>Neustart nach Absturz</dt><dd>Pausen <span class="zahl">{e.neustart.pausen_s.join(', ')}</span> s, höchstens <span class="zahl">{e.neustart.im_fenster}</span> in <span class="zahl">{e.neustart.fenster_s}</span> s</dd>
           <dt>Docker starten</dt><dd class="code">{e.docker.befehl.join(' ')}</dd>
           <dt>Docker anhalten</dt><dd class="code">{e.docker.anhaltebefehl.join(' ')}</dd>
+          <dt>Äußere Abhängigkeiten</dt><dd>geprüft alle <span class="zahl">{e.nutzt.abstand_s}</span> s, Frist <span class="zahl">{e.nutzt.frist_s}</span> s</dd>
         </dl>
       </section>
     </div>

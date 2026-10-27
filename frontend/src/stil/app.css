@@ -5,7 +5,9 @@
 
 /* Seiteninhalt füllt den Rahmen: fester Kopf, eigenes Rollfeld */
 .seiteninhalt { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.verbinden { flex: 1; display: grid; place-items: center; }
+/* zentrierter Hinweis; die Spalte wächst nie über den Rahmen, auch nicht mit langen Pfaden */
+.verbinden { flex: 1; display: grid; place-items: center; grid-template-columns: minmax(0, 1fr); }
+.leer p { overflow-wrap: anywhere; }
 
 /* Ansicht unten in der Seitenleiste */
 .seite .ansicht { margin-top: auto; display: flex; flex-direction: column; gap: var(--sw-a2); padding: var(--sw-a3) var(--sw-a1) 0; }
@@ -33,6 +35,8 @@
 
 /* Hinweise oberhalb von Listen */
 .rollfeld > .hinweis { margin-bottom: var(--sw-a3); }
+/* Text eines Hinweises bricht auch in langen Pfaden und Meldungen um, statt aus dem Kasten zu ragen */
+.hinweis > span { min-width: 0; overflow-wrap: anywhere; }
 
 /* Kleine Listen in Karten */
 .liste { list-style: none; margin: 0 0 var(--sw-a2); padding: 0; display: grid; gap: 6px; font-size: var(--sw-gr-klein); }

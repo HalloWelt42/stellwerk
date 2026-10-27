@@ -36,3 +36,15 @@
   --sw-rand-stark: rgba(52, 28, 24, 0.2);
   --sw-diagrammlinie: rgba(52, 28, 24, 0.09);
 }
+
+/* Schrift getönter Marken für die Farbwelt dieser Oberfläche (kräftig, Königsblau, Ziegel; index.html): 70 % der
+   Bedeutungsfarbe, 30 % der Grundschrift des Themas. Ändert sich eine dieser Farben, die Werte neu mischen. */
+:root[data-flaechen="ziegel"][data-palette="kraeftig"]:not([data-theme="hell"]) {
+  --sw-akzent-marke: #fcc559;  --sw-erfolg-marke: #62e6b3;  --sw-warnung-marke: #fc9d5d;  --sw-gefahr-marke: #fc7187;
+  --sw-info-marke: #729ff9;    --sw-honig-marke: #fcda5d;   --sw-sand-marke: #e8c991;
+}
+
+:root[data-flaechen="ziegel"][data-palette="kraeftig"][data-theme="hell"] {
+  --sw-akzent-marke: #8c5207;  --sw-erfolg-marke: #167451;  --sw-warnung-marke: #a34211;  --sw-gefahr-marke: #a81c37;
+  --sw-info-marke: #21439d;    --sw-honig-marke: #977307;   --sw-sand-marke: #775d27;
+}

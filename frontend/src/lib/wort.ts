@@ -21,3 +21,12 @@ export const ART: Record<Art, { wort: string; symbol: string; satz: string }> = 
 
 /** an: läuft oder ist dabei, ob ganz oder teilweise; dann zeigt der Schalter an und hält an */
 export const istAn = (z: AppZustand | Zustand): boolean => z !== 'aus' && z !== 'gestoert';
+
+/** Erreichbarkeit einer äußeren Abhängigkeit (null: noch nicht geprüft) */
+export function erreichbarkeit(e: boolean | null): { wort: string; klasse: string; symbol: string } {
+  if (e === null) return { wort: 'Wird geprüft', klasse: 'wartet', symbol: 'fa-circle-notch fa-spin' };
+  return e ? { wort: 'Erreichbar', klasse: 'fertig', symbol: 'fa-circle-check' } : { wort: 'Nicht erreichbar', klasse: 'fehler', symbol: 'fa-circle-xmark' };
+}
+
+/** Punktfarbe für einen Teil in kurzen Aufzählungen */
+export const PUNKT: Record<Zustand, string> = { aus: 'aus', startet: 'warnung', laeuft: 'lebt', stoppt: 'warnung', gestoert: 'gefahr' };

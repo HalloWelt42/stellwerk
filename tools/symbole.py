@@ -2,7 +2,7 @@
 """Leitet aus frontend/public/symbol.svg den Symbolsatz für Browser-Tabs, Startbildschirm und PWA ab.
 
 Einzige Quelle ist symbol.svg: ein Rechteck über die ganze Fläche als Grund, danach das Motiv. Die Hintergrundfarbe
-der App kommt aus site.webmanifest (background_color). Erzeugt in frontend/public:
+der App kommt aus frontend/manifest.json (background_color; daraus baut die Oberfläche ihr Manifest). Erzeugt in frontend/public:
   favicon.svg                                   Kopie der Quelle für moderne Browser
   favicon.ico                                   16, 32 und 48 in einer Datei
   favicon-32.png, icon-192.png, icon-512.png    wie die Quelle, mit durchsichtigen Ecken (purpose any)
@@ -65,7 +65,7 @@ def maskierbar(svg: bytes) -> bytes:
 
 def main() -> None:
     quelle = QUELLE.read_bytes()
-    farbe = json.loads((OEFFENTLICH / "site.webmanifest").read_text(encoding="utf-8"))["background_color"]
+    farbe = json.loads((OEFFENTLICH.parent / "manifest.json").read_text(encoding="utf-8"))["background_color"]
     shutil.copyfile(QUELLE, OEFFENTLICH / "favicon.svg")
 
     ico = [rastern(quelle, g) for g in (48, 32, 16)]
