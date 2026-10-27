@@ -4,7 +4,7 @@ description = "Stellwerk: startet und stoppt die eigenen Webapps eines Rechners,
 requires-python = ">=3.11"
 dynamic = ["version"]
 dependencies = [
-  "dienstkern @ https://github.com/HalloWelt42/dienstkern/archive/0cf19a0ec9de3d59eef870efe8a1041c471b95fe.tar.gz",
+  "dienstkern @ https://github.com/HalloWelt42/dienstkern/archive/8978ad5ac261a039de6572ca7df896ff37cb18fc.tar.gz",
   "pydantic>=2.7",
   "fastapi>=0.115",
   "uvicorn>=0.30",
