@@ -35,8 +35,9 @@ async def liste(ordner: Ordner) -> None:
         for d in v.teile(a):
             b = d.bericht()
             jetzt = f"{b.gb_jetzt:5.1f} GB" if b.gb_jetzt is not None else "      -"
-            pids = ",".join(str(p) for p in v.prozesse.get(d.kennung, Prozesse()).pids) or "-"
-            print(f"  {b.zustand.value:9} {b.kennung:28} {jetzt}  Port {b.port or '-':>5}  Prozesse {pids}  {b.meldung}")
+            p = v.prozesse.get(d.kennung, Prozesse())
+            pids = ",".join(str(x) for x in p.pids) or "-"
+            print(f"  {b.zustand.value:9} {b.kennung:28} {jetzt}  Port {b.port or '-':>5}  Prozesse {pids} {p.programm or ''}  {b.meldung}")
 
 
 def main() -> None:

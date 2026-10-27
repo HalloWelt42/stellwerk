@@ -23,8 +23,9 @@ nach einem Absturz begrenzt neu und schreibt je Teil ein Protokoll. Docker Deskt
 wird Docker nur von Hand und nur, wenn kein Docker-Teil mehr läuft.
 
 Die Oberfläche zeigt die Webapps als Liste oder als Karten (Wahl je Gerät), jede mit ihrem kurzen Zweck neben dem
-Namen. Ein Klick führt zur Detailansicht `/apps/<kennung>`: alle Teile mit Zustand, Art, Port, Ordner, Last und
-Laufzeit, Starten und Anhalten der ganzen App oder einzelner Teile, Protokollauszug je Teil, dazu die Abhängigkeiten,
+Namen, je Teil das Programm (etwa "Vektorspeicher · qdrant", bei Docker das Abbild) und die drei Werte Kerne, RAM und
+Platte. Ein Klick führt zur Detailansicht `/apps/<kennung>`: alle Teile mit Zustand, Art, Port, Ordner, Kernen, RAM,
+eingeblendeten Dateien (Datenbankdateien im Arbeitsspeicher, die macOS bei Bedarf freigibt), Platte und Laufzeit, Starten und Anhalten der ganzen App oder einzelner Teile, Protokollauszug je Teil, dazu die Abhängigkeiten,
 innen als Startreihenfolge und außen, was die App nutzt (Leitstelle, Kellerwolke, Fundus) und ob es gerade erreichbar ist.
 
 Am Mac laufen darüber unter anderem der Vektorspeicher von [[Fundus]] und die Datenbank und der Browser von
@@ -71,7 +72,10 @@ Jeder neue Eintrag braucht `zweck`: wofür die App da ist, ein Begriff oder weni
 "Wissensspeicher", "Bewerbungen", "Textprüfung"). Ältere Einträge ohne Zweck laufen weiter, die Oberfläche zeigt dann
 "Zweck fehlt: in der App-Datei eintragen". Eine längere Erklärung gehört in `beschreibung` (nur in der Detailansicht).
 Was die App außerhalb ihrer Teile braucht, steht je Eintrag unter `nutzt` mit `name`, `zweck` und `pruefadresse` oder `port`
-(mit `rechner`); Felder und Beispiel im README und in `beispiele/notizbuch.toml`.
+(mit `rechner`); Felder und Beispiel im README und in `beispiele/notizbuch.toml`. Wo ein Teil seine Daten hält, nennt
+`daten` (Ordner oder Dateien, etwa `daten = ["~/Fundus/vektorspeicher/daten"]`); das Stellwerk misst ihre Größe alle
+10 Minuten im Hintergrund (`[platte]` in `einstellungen.toml`) und zeigt sie als Platte. Docker-Teile brauchen das nur
+für eingebundene Ordner, ihre Volumes zählen von selbst.
 
 Probe: die Oberfläche zeigt unter Webapps jede eingetragene App mit ihren Teilen; ein Start über die Oberfläche bringt
 alle Teile auf "läuft".
@@ -88,6 +92,8 @@ sich aus den Repos der Apps neu kopieren. Zurückspielen: Ordner an seinen Ort l
   (`~/Stellwerk/protokolle/<app>.<teil>.log`); dort lässt er sich auch einzeln starten.
 - Eine äußere Abhängigkeit ist "nicht erreichbar": sie läuft woanders (Pi, Maschinenraum) und wird dort gestartet, nie
   vom Stellwerk. Geprüft wird alle 30 s (`[nutzt]` in `einstellungen.toml`), die Meldung nennt den Grund.
+- Platte zeigt "-" oder "fehlt: <pfad>": `daten` im Eintrag fehlt oder nennt einen Ort, den es nicht gibt; nach dem
+  Ändern misst das Stellwerk im nächsten Takt neu. Volumes von Docker-Teilen misst es nur, solange Docker läuft.
 - Eine Datei wird übergangen mit "zweck: ... höchstens 40": der Zweck ist zu lang, die Erklärung gehört in `beschreibung`.
 - Docker-Teile hängen: Docker Desktop startet noch (bis zu vier Minuten) oder läuft nicht; das Stellwerk wartet darauf.
 - Nach einer Installation reagiert nichts: `launchctl print gui/$(id -u)/stellwerk` und `~/Stellwerk/protokolle/start.log`.

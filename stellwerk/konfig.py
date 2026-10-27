@@ -73,6 +73,14 @@ class NutztPruefung(BaseModel):
     frist_s: float = Field(default=2, gt=0, le=10, description="so lange darf ihre Antwort dauern")
 
 
+class Plattenmessung(BaseModel):
+    """Messung der Plattenbelegung je Teil (Feld `daten` der App-Dateien, Volumes der Docker-Teile): selten, im
+    Hintergrund, gepuffert, nie beim Seitenaufruf."""
+
+    abstand_s: float = Field(default=600, ge=1, le=86400, description="so oft wird die Belegung jedes Teils gemessen")
+    frist_s: float = Field(default=120, gt=0, le=3600, description="so lange darf eine Messung (ein Ordner, die Docker-Abfrage) dauern")
+
+
 class Einstellungen(BaseModel):
     name: str | None = Field(default=None, description="Anzeigename des Rechners; sonst der Rechnername")
     oberflaeche: Oberflaeche = Field(default_factory=Oberflaeche)
@@ -80,6 +88,7 @@ class Einstellungen(BaseModel):
     neustart: Neustartregeln = Field(default_factory=Neustartregeln)
     docker: DockerLaufzeit = Field(default_factory=DockerLaufzeit)
     nutzt: NutztPruefung = Field(default_factory=NutztPruefung)
+    platte: Plattenmessung = Field(default_factory=Plattenmessung)
 
 
 # ── Webapps ──────────────────────────────────────────────────────────────
@@ -113,11 +122,22 @@ class Teil(BaseModel):
     neustart: bool = True
     braucht: list[str] = Field(default_factory=list, description="Teile derselben Webapp, die vorher laufen müssen")
     aktiv_ab_prozent: float = Field(default=5.0, ge=0)
+    daten: list[Path] = Field(default_factory=list, description="Ordner oder Dateien, deren Größe als Platte des Teils zählt; relativ ab ordner")
 
     @field_validator("ordner", "umgebung_datei", mode="before")
     @classmethod
     def _aufloesen(cls, wert: object) -> object:
         return pfad(wert) if isinstance(wert, str) else wert
+
+    @field_validator("daten", mode="before")
+    @classmethod
+    def _daten_aufloesen(cls, wert: object) -> object:
+        return [pfad(w) if isinstance(w, str) else w for w in wert] if isinstance(wert, list) else wert
+
+    @model_validator(mode="after")
+    def _daten_ab_ordner(self) -> Teil:
+        self.daten = [d if d.is_absolute() else self.ordner / d for d in self.daten]
+        return self
 
     @model_validator(mode="after")
     def _art_vollstaendig(self) -> Teil:
@@ -297,4 +317,4 @@ class Ordner:
 
 
 __all__ = ["App", "Art", "DOCKER", "DockerLaufzeit", "Einstellungen", "Ladefehler", "Nutzung", "NutztPruefung", "Ordner",
-           "STANDARD_ORDNER", "Teil", "ZWECK_HOECHSTENS", "docker_vorlage", "teil_vorlage"]
+           "Plattenmessung", "STANDARD_ORDNER", "Teil", "ZWECK_HOECHSTENS", "docker_vorlage", "teil_vorlage"]

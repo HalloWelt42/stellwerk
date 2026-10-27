@@ -16,6 +16,8 @@ ordner = "~/Projekte/notizbuch"
 # genau der Aufruf, den das Projekt selbst nutzt; sonst entstünde ein zweites Compose-Projekt mit leerem Datenbestand
 compose = ["--env-file", ".env", "-f", "docker/compose.yml"]
 container = "datenbank"
+# benannte Volumes des Dienstes zählen von selbst als Platte; daten nur für eingebundene Ordner des Projekts
+daten = ["~/Projekte/notizbuch/docker/sicherungen"]
 port = 5432
 speicher_gb = 0.5
 startzeit_s = 120
@@ -29,6 +31,8 @@ befehl = [".venv/bin/uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", 
 port = 8300
 braucht = ["datenbank"]
 umgebung_datei = "~/Projekte/notizbuch/.env"
+# Ordner oder Dateien, deren Größe als Platte des Teils zählt (gemessen selten im Hintergrund); relativ ab ordner
+daten = ["~/Notizbuch/anhaenge", "suchindex"]
 
 [[teile]]
 kennung = "oberflaeche"

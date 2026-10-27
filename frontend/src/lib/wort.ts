@@ -30,3 +30,11 @@ export function erreichbarkeit(e: boolean | null): { wort: string; klasse: strin
 
 /** Punktfarbe für einen Teil in kurzen Aufzählungen */
 export const PUNKT: Record<Zustand, string> = { aus: 'aus', startet: 'warnung', laeuft: 'lebt', stoppt: 'warnung', gestoert: 'gefahr' };
+
+/** Messgrößen mit Erklärung für Tooltips; eine Wahrheit für Karte, Liste und Detailansicht */
+export const MASS = {
+  kerne: { wort: 'Kerne', satz: 'Prozessorlast der eigenen Prozesse; ein voll ausgelasteter Kern ist 1' },
+  ram: { wort: 'RAM', satz: 'Arbeitsspeicher, den die eigenen Prozesse fest belegen (wie die Aktivitätsanzeige). Docker-Teile zählen im Speicher von Docker, nicht hier' },
+  eingeblendet: { wort: 'Eingeblendete Dateien', satz: 'Teile von Dateien, die das Programm in den Arbeitsspeicher eingeblendet hat, etwa die Daten einer Datenbank. macOS gibt sie bei Bedarf wieder frei; sie zählen deshalb nicht zum RAM' },
+  platte: { wort: 'Platte', satz: 'Was der Teil auf der Platte belegt: die Datenorte aus der App-Datei (Feld daten), bei Docker dazu seine Volumes. Gemessen selten im Hintergrund' },
+} as const;

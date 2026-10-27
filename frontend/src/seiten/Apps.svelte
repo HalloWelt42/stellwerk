@@ -36,7 +36,7 @@
       <div class="kennzahl erfolg"><b>{laufen}</b><span>Laufen</span></div>
       <div class="kennzahl"><b>{s.apps.length - laufen - gestoert}</b><span>Aus</span></div>
       {#if gestoert}<div class="kennzahl fehler"><b>{gestoert}</b><span>Gestört</span></div>{/if}
-      <div class="kennzahl" title="Was die eigenen Prozesse aller Webapps gerade belegen (ohne Container)"><b>{gb(belegt)}</b><span>Belegt</span></div>
+      <div class="kennzahl" title="Arbeitsspeicher, den die eigenen Prozesse aller Webapps fest belegen (ohne Container)"><b>{gb(belegt)}</b><span>RAM</span></div>
     </div>
   </div>
   <div class="rollfeld liste-apps">

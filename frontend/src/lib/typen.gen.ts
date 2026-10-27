@@ -55,6 +55,7 @@ export interface Einstellungen {
   neustart: Neustartregeln;
   docker: DockerLaufzeit;
   nutzt: NutztPruefung;
+  platte: Plattenmessung;
 }
 /**
  * This interface was referenced by `Stellwerk`'s JSON-Schema
@@ -143,6 +144,23 @@ export interface NutztPruefung {
   frist_s: number;
 }
 /**
+ * Messung der Plattenbelegung je Teil (Feld `daten` der App-Dateien, Volumes der Docker-Teile): selten, im
+ * Hintergrund, gepuffert, nie beim Seitenaufruf.
+ *
+ * This interface was referenced by `Stellwerk`'s JSON-Schema
+ * via the `definition` "Plattenmessung".
+ */
+export interface Plattenmessung {
+  /**
+   * so oft wird die Belegung jedes Teils gemessen
+   */
+  abstand_s: number;
+  /**
+   * so lange darf eine Messung (ein Ordner, die Docker-Abfrage) dauern
+   */
+  frist_s: number;
+}
+/**
  * This interface was referenced by `Stellwerk`'s JSON-Schema
  * via the `definition` "AppAnsicht".
  */
@@ -156,7 +174,9 @@ export interface AppAnsicht {
   zustand: AppZustand;
   soll: Soll | null;
   gb_jetzt: number | null;
+  eingeblendet_gb: number | null;
   cpu_prozent: number | null;
+  platte_gb: number | null;
   teile: TeilAnsicht[];
   folge: string[];
   nutzt: NutzungAnsicht[];
@@ -175,7 +195,9 @@ export interface TeilAnsicht {
   braucht: string[];
   zustand: Zustand;
   fremd: boolean;
+  programm: string | null;
   gb_jetzt: number | null;
+  eingeblendet_gb: number | null;
   spitze_gb: number | null;
   schaetzung_gb: number;
   cpu_prozent: number | null;
@@ -186,6 +208,10 @@ export interface TeilAnsicht {
   protokolldatei: string;
   pids: number[];
   laeuft_seit: number | null;
+  daten: string[];
+  platte_gb: number | null;
+  platte_geprueft: number | null;
+  platte_meldung: string;
 }
 /**
  * Eine äußere Abhängigkeit mit der letzten gepufferten Prüfung.

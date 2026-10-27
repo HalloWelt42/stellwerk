@@ -3,11 +3,15 @@
 Ein Ort für die eigenen Webapps eines Rechners: Backend, Oberfläche, Datenbank und was eine Webapp sonst zum Laufen
 braucht. Je Webapp eine Datei mit ihren Teilen, nativ als eigener Prozess oder als Container mit Docker. Ein Schalter
 startet die ganze Webapp in der Reihenfolge ihrer Abhängigkeiten und hält sie in umgekehrter Folge wieder an. Statt dass
-Projekte irgendwo im Hintergrund laufen, steht hier, was läuft, was es belegt und was es ausgibt.
+Projekte irgendwo im Hintergrund laufen, steht hier, was läuft, welches Programm das ist, was es belegt und was es ausgibt.
 
 - **Oberfläche im Browser** unter `http://127.0.0.1:8550/`, nur auf diesem Rechner erreichbar. Die Webapps als
   ausführliche Liste oder als Karten zum Überblick (Wahl je Gerät); ein Klick führt zur Detailansicht
   `/apps/<kennung>` mit allen Teilen, Starten und Anhalten je Teil, Protokollen und den Abhängigkeiten der Webapp.
+- **Was läuft und was es belegt:** je Teil das Programm (etwa "Vektorspeicher · qdrant", bei Docker das Abbild),
+  Prozessorlast in Kernen, RAM (fest belegter Arbeitsspeicher), in der Detailansicht dazu die eingeblendeten Dateien
+  (Datenbankdateien im Arbeitsspeicher, die macOS bei Bedarf freigibt) und die Platte (Datenorte aus der App-Datei,
+  bei Docker die Volumes). Jeder Wert erklärt sich beim Darüberfahren.
 - **Jede Webapp sagt, wofür sie da ist:** ein kurzer Zweck neben dem Namen (etwa "Wissensspeicher"), damit sich
   ähnliche Programme nicht verwechseln lassen. Das Stellwerk selbst heißt in Kopf und Titel "Stellwerk · App-Steuerung".
 - **Im zentralen Steuerwerk:** Das Stellwerk trägt sich bei der Installation im [Maschinenraum](https://github.com/HalloWelt42/maschinenraum)
@@ -102,6 +106,16 @@ Je Teil:
 | `pfad` | übliche Systempfade | Suchpfad für Programme |
 | `neustart` | ja | nach einem Absturz neu starten, solange der Teil laufen soll |
 | `aktiv_ab_prozent` | 5 | ab dieser Prozessorlast (Prozent eines Kerns) gilt er als arbeitend |
+| `daten` | leer | Ordner oder Dateien, deren Größe als Platte des Teils zählt, etwa `["~/Fundus/vektorspeicher/daten"]`; `~` und `$VAR` werden aufgelöst, ein relativer Pfad gilt ab `ordner`. Bei Docker-Teilen zählen die benannten Volumes ihres Dienstes von selbst, `daten` nur für Ordner, die sie einbinden |
+
+### Platte (`daten`)
+
+Das Stellwerk misst die Platte im Hintergrund, selten und gepuffert, nie beim Seitenaufruf: jeden Teil höchstens alle
+`platte.abstand_s` Sekunden (Vorgabe 10 Minuten), nacheinander, sofort nach dem Start des Stellwerks und wenn sich
+`daten` in der App-Datei ändert. Ordner und Dateien zählen wie mit `du` (belegte Blöcke). Bei Docker-Teilen nennt
+`docker compose <compose> config` Abbild und benannte Volumes des Dienstes, ihre Größe kommt aus einer Abfrage `docker
+system df -v` für alle; Volumes werden nur gemessen, solange Docker läuft (das Stellwerk startet Docker dafür nie). Fehlt
+ein Datenort oder ein Volume, zählt der Rest und die Detailansicht nennt, was fehlt.
 
 Docker-Teile starten mit `docker compose <compose> up -d <container>` und halten mit `docker compose <compose> stop
 <container>` an, nie per Signal. Wichtig ist derselbe Aufruf wie im Projekt (Umgebungsdatei, Compose-Datei): sonst
@@ -162,6 +176,8 @@ aber nicht doppelt.
 | `docker` | `startzeit_s`, `anhaltezeit_s` | 240, 180 | Grenzen für Start und Anhalten |
 | `nutzt` | `abstand_s` | 30 | so oft wird jede äußere Abhängigkeit geprüft |
 | `nutzt` | `frist_s` | 2 | so lange darf ihre Antwort dauern |
+| `platte` | `abstand_s` | 600 | so oft wird die Platte jedes Teils gemessen |
+| `platte` | `frist_s` | 120 | so lange darf eine Messung dauern (ein Ordner, die Abfrage der Volumes) |
 
 ## Schnittstelle
 
@@ -181,7 +197,13 @@ Je Teil liefert `GET /api/stand` neben Zustand, Port, Messwerten und Meldung:
 |---|---|
 | `pids` | die Prozesse, die das Stellwerk für den Teil führt: bei einem selbst gestarteten Teil die lebenden Prozesse seiner Prozessgruppe, bei einem übernommenen der lauschende Prozess mit seinen Nachfahren; bei Docker-Teilen und solange er nicht läuft leer. Stand des letzten Messtakts |
 | `laeuft_seit` | Start seines ältesten Prozesses (Sekunden seit 1970), daraus die Laufzeit |
+| `programm` | nativ: lesbarer Name des Hauptprozesses (bei Python und Node das Modul oder Skript, etwa `qdrant`, `caddy`, `rechtschreibung`), solange er läuft; Docker: Name des Abbilds |
+| `gb_jetzt` | RAM: fest belegter Arbeitsspeicher (physischer Fußabdruck auf dem Mac, PSS auf Linux), solange er läuft |
+| `eingeblendet_gb` | eingeblendete Dateien im Arbeitsspeicher, die das System bei Bedarf freigibt (auf dem Mac: resident, aber nicht im Fußabdruck, aus demselben Aufruf); zählen nicht zu `gb_jetzt`. Auf Linux und solange er nicht läuft `null` |
+| `daten`, `platte_gb`, `platte_geprueft`, `platte_meldung` | Datenorte aus der App-Datei, belegte Platte (Datenorte und Volumes), Zeitpunkt der letzten Messung, was dabei fehlte; `platte_gb` ist `null`, solange nichts gemessen ist |
 | `braucht`, `zweck` | wie in der App-Datei |
+
+Je Webapp stehen `gb_jetzt`, `eingeblendet_gb`, `cpu_prozent` und `platte_gb` als Summe ihrer gemessenen Teile.
 
 Schreibende Aufrufe brauchen den Kopf `X-Stellwerk: 1`, und es gelten nur die Rechnernamen dieses Rechners. So kann
 keine fremde Webseite im selben Browser Webapps schalten.

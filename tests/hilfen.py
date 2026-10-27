@@ -2,7 +2,9 @@
 
 Die Schein-Laufzeit ist ein Programm `docker` in einem eigenen Ordner, der im Suchpfad der Teile steht: `desktop
 start/stop` und `info` spielen die Laufzeit, `compose ... up -d webNNNN` startet einen HTTP-Server auf Port NNNN als
-Container, `compose ... stop webNNNN` beendet ihn."""
+Container, `compose ... stop webNNNN` beendet ihn. `compose ... config` nennt die Dienste aus der Datei `dienste` mit dem
+Abbild probe:1 und dem Volume probe_daten, `system df -v` gibt diesem Volume 1.5GB (beides als JSON wie die echte
+Laufzeit)."""
 
 from __future__ import annotations
 
@@ -24,6 +26,16 @@ elif a[:2] == ["desktop", "stop"]:
     laeuft.unlink(missing_ok=True)
 elif a[:1] == ["info"]:
     sys.exit(0 if laeuft.exists() else 1)
+elif a[:1] == ["compose"] and "config" in a:
+    import json
+    dienste = {{n: {{"image": "probe:1", "volumes": [{{"type": "volume", "source": "daten", "target": "/daten"}}]}}
+               for n in (hier / "dienste").read_text().split()}}
+    print(json.dumps({{"name": "probe", "services": dienste, "volumes": {{"daten": {{"name": "probe_daten"}}}}}}))
+elif a[:2] == ["system", "df"]:
+    if not laeuft.exists():
+        sys.exit("Docker läuft nicht")
+    import json
+    print(json.dumps({{"Volumes": [{{"Name": "probe_daten", "Size": "1.5GB"}}, {{"Name": "anderes", "Size": "264B"}}]}}))
 elif a[:1] == ["compose"]:
     if not laeuft.exists():
         sys.exit("Docker läuft nicht")
@@ -52,10 +64,11 @@ def server(port: int) -> str:
     return f'["{sys.executable}", "-m", "http.server", "{port}", "--bind", "127.0.0.1"]'
 
 
-def schein_docker(tmp: Path) -> str:
+def schein_docker(tmp: Path, dienste: tuple[str, ...] = ()) -> str:
     """Legt die Schein-Laufzeit an; Rückgabe: Suchpfad mit ihr vorne."""
     ordner = tmp / "schein"
     ordner.mkdir(exist_ok=True)
+    (ordner / "dienste").write_text(" ".join(dienste))
     (ordner / "docker").write_text(SCHEIN_DOCKER)
     (ordner / "docker").chmod(0o755)
     return f"{ordner}:/usr/bin:/bin"

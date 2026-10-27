@@ -26,7 +26,7 @@
       <div class="kennzahl erfolg"><b>{laufen.length}</b><span>Laufen</span></div>
       <div class="kennzahl"><b>{s.apps.length - laufen.length - gestoert.length}</b><span>Aus</span></div>
       {#if gestoert.length}<div class="kennzahl fehler"><b>{gestoert.length}</b><span>Gestört</span></div>{/if}
-      <div class="kennzahl" title="Was die eigenen Prozesse aller Webapps gerade belegen (ohne Container)"><b>{gb(belegt)}</b><span>Webapps belegt</span>
+      <div class="kennzahl" title="Arbeitsspeicher, den die eigenen Prozesse aller Webapps fest belegen (ohne Container)"><b>{gb(belegt)}</b><span>RAM der Webapps</span>
         {#if s.docker?.gb_jetzt != null}<small>Docker {gb(s.docker.gb_jetzt)}</small>{/if}</div>
     </div>
   </div>
@@ -43,7 +43,7 @@
                 <Zweck zweck={a.zweck} />
                 <span class="zustand {z.klasse}"><i class="fa-solid {z.symbol}"></i>{z.wort}</span>
                 {#each a.arten as art (art)}<span class="leise klein" title={ART[art].satz}><i class="fa-solid {ART[art].symbol}"></i> {ART[art].wort}</span>{/each}</div>
-              <div class="werte" title="Teile, die laufen, und was sie belegen">
+              <div class="werte" title="Arbeitsspeicher, den die laufenden Teile fest belegen">
                 <b class="zahl">{a.gb_jetzt != null ? gb(a.gb_jetzt) : '-'}</b><span>{a.teile.filter((t) => t.zustand === 'laeuft').length} von {a.teile.length} Teilen</span></div>
               {#if a.oberflaeche && a.zustand === 'laeuft'}<a class="knopf klein ohne" href={a.oberflaeche} target="_blank" rel="noopener" title="Webapp im Browser öffnen"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>{:else}<span></span>{/if}
               <Schalter app={a} />
@@ -69,8 +69,8 @@
 </div>
 
 <style>
-  .lagesatz { color: var(--sw-erfolg); font-weight: 600; padding-bottom: 4px; }
-  .lagesatz.gefahr { color: var(--sw-gefahr); }
+  .lagesatz { color: var(--sw-erfolg-marke); font-weight: 600; padding-bottom: 4px; }
+  .lagesatz.gefahr { color: var(--sw-gefahr-marke); }
   .spalten-uebersicht { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: var(--sw-a5); align-items: start; }
   .links, .rechts { display: flex; flex-direction: column; gap: var(--sw-a4); min-width: 0; }
   .abschnitt-kopf { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--sw-a2); }

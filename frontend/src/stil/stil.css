@@ -844,3 +844,6 @@ select.eingabe { padding-right: var(--sw-a5); }
   .suche { display: none; }
   .kennzahl { min-width: 120px; }
 }
+
+/* Begriff mit Erklärung beim Darüberfahren */
+.erklaert { cursor: help; text-decoration: underline dotted; text-decoration-color: var(--sw-text-3); text-underline-offset: 3px; }

@@ -1,6 +1,6 @@
 <script lang="ts">
   // Detailansicht einer Webapp unter /apps/<kennung>: Name mit Zweck und Beschreibung, alle Teile mit Zustand, Art,
-  // Port, Ordner, Last, Laufzeit und Meldung, Starten und Anhalten der ganzen App und einzelner Teile, Protokollauszug
+  // Programm, Port, Ordner, Kerne, RAM, eingeblendeten Dateien, Platte (je mit Erklärung beim Darüberfahren), Laufzeit und Meldung, Starten und Anhalten der ganzen App und einzelner Teile, Protokollauszug
   // je Teil. Rechts die Abhängigkeiten: intern als Startreihenfolge (Teile, braucht, Docker-Laufzeit), außen was die
   // Webapp nutzt und ob es gerade erreichbar ist. Bestätigungen stehen in der Leiste unter dem Kopf, nie im Browser-Dialog.
   import type { Schaltung } from '../lib/api';
@@ -8,8 +8,9 @@
   import { SCHALTWORT, schalten } from '../lib/schalten.svelte';
   import type { AppAnsicht, Stand, TeilAnsicht } from '../lib/typen.gen';
   import { weg } from '../lib/weg.svelte';
-  import { APPZUSTAND, ART, ZUSTAND, erreichbarkeit, istAn } from '../lib/wort';
+  import { APPZUSTAND, ART, MASS, ZUSTAND, erreichbarkeit, istAn } from '../lib/wort';
   import Protokoll from '../teile/Protokoll.svelte';
+  import TeilName from '../teile/TeilName.svelte';
   import Zweck from '../teile/Zweck.svelte';
 
   let { stand: s, kennung }: { stand: Stand; kennung: string } = $props();
@@ -22,6 +23,7 @@
   const laufen = $derived(a ? a.teile.filter((t) => t.zustand === 'laeuft').length : 0);
   const erreichbar = $derived(a ? a.nutzt.filter((n) => n.erreichbar).length : 0);
   const mitDocker = $derived(!!a && a.arten.includes('docker'));
+  const abstand = $derived(dauer(s.einstellungen.platte.abstand_s));
 
   /** Was ein Teil vorher braucht, mit Namen; Docker-Teile brauchen die Container-Laufzeit */
   function braucht(t: TeilAnsicht): string[] {
@@ -86,8 +88,10 @@
       </div>
       <div class="kennzahlen">
         <div class="kennzahl" class:erfolg={laufen > 0 && laufen === a.teile.length}><b>{laufen} / {a.teile.length}</b><span>Teile laufen</span></div>
-        <div class="kennzahl" title="Prozessorlast der eigenen Prozesse; ein Kern voll ausgelastet ist 1"><b>{kerne(a.cpu_prozent)}</b><span>Kerne</span></div>
-        <div class="kennzahl" title="Was die eigenen Prozesse gerade belegen; Container zählen bei Docker"><b>{gb(a.gb_jetzt)}</b><span>Speicher</span></div>
+        <div class="kennzahl" title={MASS.kerne.satz}><b>{kerne(a.cpu_prozent)}</b><span>{MASS.kerne.wort}</span></div>
+        <div class="kennzahl" title={MASS.ram.satz}><b>{gb(a.gb_jetzt)}</b><span>{MASS.ram.wort}</span>
+          {#if a.eingeblendet_gb}<small title={MASS.eingeblendet.satz}>dazu {gb(a.eingeblendet_gb)} eingeblendet</small>{/if}</div>
+        <div class="kennzahl" title={MASS.platte.satz}><b>{gb(a.platte_gb)}</b><span>{MASS.platte.wort}</span></div>
         {#if a.nutzt.length}<div class="kennzahl" class:fehler={erreichbar < a.nutzt.length && a.nutzt.every((n) => n.erreichbar !== null)}><b>{erreichbar} / {a.nutzt.length}</b><span>Nutzt erreichbar</span></div>{/if}
       </div>
       {#if frage}
@@ -109,7 +113,7 @@
             <article class="karte teilkarte">
               <header>
                 <span class="zustand {tz.klasse}"><i class="fa-solid {arbeitet ? 'fa-circle-notch fa-spin' : tz.symbol}"></i>{arbeitet ? SCHALTWORT[arbeitet] : tz.wort}</span>
-                <h3>{t.name}</h3>
+                <h3><TeilName teil={t} /></h3>
                 {#if t.zweck}<span class="teilzweck">{t.zweck}</span>{/if}
                 <span class="art" title={ART[t.art].satz}><i class="fa-solid {ART[t.art].symbol}"></i>{ART[t.art].wort}</span>
                 {#if t.aktiv}<span class="arbeitet" title="Prozessorlast über der Schwelle des Teils"><i class="fa-solid fa-gear fa-spin"></i> arbeitet</span>{/if}
@@ -118,7 +122,19 @@
               <dl class="angaben">
                 {#if t.port}<dt>Port</dt><dd class="zahl">{t.port}</dd>{/if}
                 <dt>Ordner</dt><dd><span class="code">{t.ordner}</span></dd>
-                {#if t.cpu_prozent != null || t.gb_jetzt != null}<dt>Last</dt><dd><span class="zahl">{kerne(t.cpu_prozent)}</span> Kerne, <span class="zahl">{gb(t.gb_jetzt)}</span> Speicher</dd>{/if}
+                {#if t.cpu_prozent != null}<dt class="erklaert" title={MASS.kerne.satz}>{MASS.kerne.wort}</dt><dd class="zahl">{kerne(t.cpu_prozent)}</dd>{/if}
+                {#if t.gb_jetzt != null}<dt class="erklaert" title={MASS.ram.satz}>{MASS.ram.wort}</dt><dd><span class="zahl">{gb(t.gb_jetzt)}</span> <span class="leise">fest belegt</span></dd>{/if}
+                {#if t.eingeblendet_gb != null}<dt class="erklaert" title={MASS.eingeblendet.satz}>{MASS.eingeblendet.wort}</dt>
+                  <dd><span class="zahl">{gb(t.eingeblendet_gb)}</span> <span class="leise">kann macOS bei Bedarf freigeben</span></dd>{/if}
+                {#if t.daten.length || t.platte_gb != null || t.platte_meldung}
+                  <dt class="erklaert" title="{MASS.platte.satz}, alle {abstand}">{MASS.platte.wort}</dt>
+                  <dd class="platte">
+                    <span><span class="zahl">{gb(t.platte_gb)}</span>
+                      <span class="leise">{t.platte_geprueft != null ? `gemessen ${vor(t.platte_geprueft, s.zeit)}` : t.art === 'docker' && s.docker?.zustand !== 'laeuft' ? 'Volumes werden gemessen, sobald Docker läuft' : 'wird gemessen'}</span></span>
+                    {#each t.daten as d (d)}<span class="code">{d}</span>{/each}
+                    {#if t.platte_meldung}<span class="warnzeile"><i class="fa-solid fa-triangle-exclamation"></i> {t.platte_meldung}</span>{/if}
+                  </dd>
+                {/if}
                 {#if t.laeuft_seit != null}<dt>Laufzeit</dt><dd>{dauer(s.zeit - t.laeuft_seit)} <span class="leise">(seit {uhrzeit(t.laeuft_seit)})</span></dd>{/if}
                 {#if t.pids.length}<dt>Prozesse</dt><dd class="zahl" title="Prozesse, die das Stellwerk für diesen Teil führt">{t.pids.join(', ')}</dd>{/if}
               </dl>
@@ -204,6 +220,9 @@
   .angaben { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sw-a2) var(--sw-a4); margin: 0; font-size: var(--sw-gr-klein); }
   .angaben dt { color: var(--sw-text-3); }
   .angaben dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+  .angaben dt.erklaert { justify-self: start; }
+  .platte { display: flex; flex-direction: column; gap: 2px; }
+  .warnzeile { color: var(--sw-warnung-marke); }
   .knoepfe { display: flex; gap: var(--sw-a2); flex-wrap: wrap; }
   .auszug { --hoehe: 220px; }
   .auszug :global(.protokoll) { margin-top: 0; }

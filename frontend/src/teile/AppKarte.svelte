@@ -1,13 +1,15 @@
 <script lang="ts">
-  // Eine Webapp in der Liste: Name mit Zweck, Zustand, Teile mit ihrem Stand, Schalter für alle Teile, Öffnen.
+  // Eine Webapp in der Liste: Name mit Zweck, Zustand, RAM und Platte, Teile mit Programm und Stand, Schalter für alle
+  // Teile, Öffnen.
   // Der Name führt zur Detailansicht. Anhalten fragt erst nach (ohne Browser-Dialog).
   import type { Schaltung } from '../lib/api';
   import { gb } from '../lib/format';
   import { SCHALTWORT, schalten } from '../lib/schalten.svelte';
   import type { AppAnsicht } from '../lib/typen.gen';
   import { weg } from '../lib/weg.svelte';
-  import { APPZUSTAND, ART, ZUSTAND, istAn } from '../lib/wort';
+  import { APPZUSTAND, ART, MASS, ZUSTAND, istAn } from '../lib/wort';
   import Protokoll from './Protokoll.svelte';
+  import TeilName from './TeilName.svelte';
   import Zweck from './Zweck.svelte';
 
   let { app: a }: { app: AppAnsicht } = $props();
@@ -32,7 +34,10 @@
     <h2><a href={weg.pfad('apps', a.kennung)} onclick={(e) => weg.klick(e, 'apps', a.kennung)} title="Detailansicht: Teile, Abhängigkeiten, Protokolle">{a.name}</a></h2>
     <Zweck zweck={a.zweck} datei={a.datei} />
     {#each a.arten as art (art)}<span class="art" title={ART[art].satz}><i class="fa-solid {ART[art].symbol}"></i>{ART[art].wort}</span>{/each}
-    {#if a.gb_jetzt != null}<div class="speicherzahl" title="Was die eigenen Prozesse der Webapp gerade belegen; Container zählen bei Docker"><b class="zahl">{gb(a.gb_jetzt)}</b><span>belegt</span></div>{/if}
+    <div class="speicherzahlen">
+      {#if a.gb_jetzt != null}<div class="speicherzahl" title={MASS.ram.satz}><b class="zahl">{gb(a.gb_jetzt)}</b><span>{MASS.ram.wort}</span></div>{/if}
+      {#if a.platte_gb != null}<div class="speicherzahl" title={MASS.platte.satz}><b class="zahl">{gb(a.platte_gb)}</b><span>{MASS.platte.wort}</span></div>{/if}
+    </div>
   </header>
 
   <ul class="teile">
@@ -41,13 +46,14 @@
       <li>
         <div class="teil">
           <span class="zustand {tz.klasse}"><i class="fa-solid {tz.symbol}"></i>{tz.wort}</span>
-          <b>{t.name}</b>
+          <TeilName teil={t} fett />
           <span class="leise" title={ART[t.art].satz}><i class="fa-solid {ART[t.art].symbol}"></i> {ART[t.art].wort}</span>
           {#if t.port}<span class="zahl leise" title="Port, auf dem der Teil antwortet">Port {t.port}</span>{/if}
           {#if t.aktiv}<span class="arbeitet" title="Prozessorlast {t.cpu_prozent} Prozent eines Kerns"><i class="fa-solid fa-gear fa-spin"></i> arbeitet</span>{/if}
           {#if t.fremd}<span class="leise" title="Lief schon, ohne vom Stellwerk gestartet zu sein; das Stellwerk misst ihn und kann ihn anhalten"><i class="fa-solid fa-hand"></i> von außen gestartet</span>{/if}
           <span class="rechts">
-            {#if t.gb_jetzt != null}<span class="zahl" title="Gerade gemessen">{gb(t.gb_jetzt)}</span>{/if}
+            {#if t.gb_jetzt != null}<span class="wert" title={MASS.ram.satz}><span class="wertname">{MASS.ram.wort}</span> <span class="zahl">{gb(t.gb_jetzt)}</span></span>{/if}
+            {#if t.platte_gb != null}<span class="wert" title={MASS.platte.satz}><span class="wertname">{MASS.platte.wort}</span> <span class="zahl">{gb(t.platte_gb)}</span></span>{/if}
             <button class="knopf klein ohne" class:aktiv={offen === t.kennung} onclick={() => (offen = offen === t.kennung ? null : t.kennung)} title="Ausgabe dieses Teils"><i class="fa-solid fa-scroll"></i> Protokoll</button>
           </span>
         </div>
@@ -86,15 +92,18 @@
   header h2 a { color: var(--sw-text); }
   header h2 a:hover { color: var(--sw-akzent-schrift); }
   .art { display: inline-flex; align-items: center; gap: 6px; font-size: var(--sw-gr-klein); color: var(--sw-text-2); }
-  .speicherzahl { margin-left: auto; text-align: right; line-height: 1.2; }
+  .speicherzahlen { margin-left: auto; display: flex; gap: var(--sw-a4); }
+  .speicherzahl { text-align: right; line-height: 1.2; }
   .speicherzahl b { display: block; font-size: var(--sw-gr-titel); font-weight: 600; }
   .speicherzahl span { display: block; font-size: var(--sw-gr-marke); color: var(--sw-text-3); }
   .teile { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sw-a2); }
   .teile li { background: var(--sw-karte-2); border-radius: var(--sw-ecke); padding: var(--sw-a2) var(--sw-a3); }
   .teil { display: flex; align-items: center; gap: var(--sw-a2) var(--sw-a4); flex-wrap: wrap; font-size: var(--sw-gr-klein); }
-  .teil .rechts { margin-left: auto; display: inline-flex; align-items: center; gap: var(--sw-a3); }
+  .teil .rechts { margin-left: auto; display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: var(--sw-a2) var(--sw-a3); min-width: 0; }
   .teile .hinweis { margin-top: var(--sw-a2); }
   .arbeitet { color: var(--sw-akzent-schrift); }
+  .wert { white-space: nowrap; }
+  .wertname { font-size: var(--sw-gr-marke); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sw-text-3); }
   footer { display: flex; align-items: center; gap: var(--sw-a2) var(--sw-a3); flex-wrap: wrap; }
   .datei { margin-left: auto; font-family: var(--sw-schrift-code); font-size: var(--sw-gr-marke); color: var(--sw-text-3); overflow-wrap: anywhere; }
 </style>

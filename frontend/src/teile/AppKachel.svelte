@@ -1,20 +1,24 @@
 <script lang="ts">
-  // Eine Webapp als Karte zum Überblick: Name mit Zweck, Schalter, Zustand, Teile kurz, Last, Hinweise. Ein Klick auf die
+  // Eine Webapp als Karte zum Überblick: Name mit Zweck, Schalter, Zustand, Teile kurz mit Programm, Kerne, RAM und
+  // Platte, Hinweise. Ein Klick auf die
   // Karte (nicht auf Schalter oder Öffnen) führt zur Detailansicht: der Namenslink überdeckt die Karte, die Bedienung
   // liegt darüber. So geht es auch per Tastatur und mit Mittelklick in einen neuen Reiter.
   import { gb, kerne } from '../lib/format';
   import { SCHALTWORT, schalten } from '../lib/schalten.svelte';
   import type { AppAnsicht } from '../lib/typen.gen';
   import { weg } from '../lib/weg.svelte';
-  import { APPZUSTAND, ART, PUNKT, ZUSTAND } from '../lib/wort';
+  import { APPZUSTAND, ART, MASS, PUNKT, ZUSTAND } from '../lib/wort';
   import Schalter from './Schalter.svelte';
+  import TeilName from './TeilName.svelte';
   import Zweck from './Zweck.svelte';
 
   let { app: a }: { app: AppAnsicht } = $props();
 
   const z = $derived(APPZUSTAND[a.zustand]);
   const arbeitet = $derived(schalten.was(a.kennung));
-  const laufen = $derived(a.teile.filter((t) => t.zustand === 'laeuft').length);
+  // ohne Messwert sagt der Tooltip, warum: nichts eingetragen oder noch nicht gemessen
+  const platteSatz = $derived(a.platte_gb != null ? MASS.platte.satz
+    : a.teile.some((t) => t.daten.length || t.art === 'docker') ? 'Noch nicht gemessen' : 'Keine Datenorte eingetragen (Feld daten der App-Datei)');
   // Hinweise knapp und gleich gebaut; die ganzen Meldungen stehen in der Detailansicht
   const hinweise = $derived([
     ...a.teile.filter((t) => t.zustand === 'gestoert' && t.meldung).slice(0, 1)
@@ -43,13 +47,13 @@
   </div>
 
   <ul class="teilchen" aria-label="Teile">
-    {#each a.teile as t (t.kennung)}<li><span class="punkt {PUNKT[t.zustand]}" title={ZUSTAND[t.zustand].wort}></span>{t.name}</li>{/each}
+    {#each a.teile as t (t.kennung)}<li><span class="punkt {PUNKT[t.zustand]}" title={ZUSTAND[t.zustand].wort}></span><TeilName teil={t} /></li>{/each}
   </ul>
 
   <dl class="last">
-    <div><dt>Teile</dt><dd><b class="zahl">{laufen}</b> von <b class="zahl">{a.teile.length}</b></dd></div>
-    <div><dt>Kerne</dt><dd><b class="zahl">{kerne(a.cpu_prozent)}</b></dd></div>
-    <div><dt>Speicher</dt><dd><b class="zahl">{gb(a.gb_jetzt)}</b></dd></div>
+    <div title={MASS.kerne.satz}><dt>{MASS.kerne.wort}</dt><dd><b class="zahl">{kerne(a.cpu_prozent)}</b></dd></div>
+    <div title={MASS.ram.satz}><dt>{MASS.ram.wort}</dt><dd><b class="zahl">{gb(a.gb_jetzt)}</b></dd></div>
+    <div title={platteSatz}><dt>{MASS.platte.wort}</dt><dd><b class="zahl">{gb(a.platte_gb)}</b></dd></div>
   </dl>
 
   {#if hinweise.length}

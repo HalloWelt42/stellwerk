@@ -25,6 +25,7 @@ from . import __version__
 from .betrieb import AppZustand, Schaltung, Verwalter
 from .konfig import DOCKER, App, Art, Einstellungen, Nutzung, Ordner, Teil
 from .nutzt import Erreichbarkeiten
+from .platte import Belegung, Plattenpuffer
 from .prozesse import Prozesse
 
 log = logging.getLogger("stellwerk")
@@ -40,7 +41,9 @@ class TeilAnsicht(BaseModel):
     braucht: list[str]              # Teile derselben Webapp, die vorher laufen müssen; Docker-Teile brauchen dazu die Laufzeit
     zustand: Zustand
     fremd: bool
-    gb_jetzt: float | None          # gemessen, solange er läuft (Docker-Teile: im Speicher der Laufzeit, hier nicht einzeln)
+    programm: str | None            # nativ: lesbarer Name des Hauptprozesses, solange er läuft (etwa qdrant); docker: Name des Abbilds
+    gb_jetzt: float | None          # fest belegter Arbeitsspeicher, gemessen, solange er läuft (Docker-Teile: im Speicher der Laufzeit, hier nicht einzeln)
+    eingeblendet_gb: float | None   # dazu eingeblendete Dateien im Arbeitsspeicher, die das System bei Bedarf freigibt; None: nicht gemessen
     spitze_gb: float | None
     schaetzung_gb: float
     cpu_prozent: float | None       # Prozent eines Kerns
@@ -51,6 +54,10 @@ class TeilAnsicht(BaseModel):
     protokolldatei: str
     pids: list[int]                 # Prozesse, die das Stellwerk für ihn führt (Prozessgruppe oder übernommener Prozess mit Nachfahren); Docker leer
     laeuft_seit: float | None       # Start seines ältesten Prozesses, Sekunden seit 1970
+    daten: list[str]                # Datenorte aus der App-Datei, deren Größe als Platte zählt
+    platte_gb: float | None         # belegte Platte (Datenorte und bei Docker die Volumes); None: nichts zu messen oder noch nicht gemessen
+    platte_geprueft: float | None   # Zeitpunkt der letzten Plattenmessung, Sekunden seit 1970
+    platte_meldung: str             # was bei der Plattenmessung fehlte oder scheiterte
 
 
 class NutzungAnsicht(BaseModel):
@@ -73,8 +80,10 @@ class AppAnsicht(BaseModel):
     arten: list[Art]
     zustand: AppZustand
     soll: Soll | None
-    gb_jetzt: float | None          # Summe der gemessenen Teile
+    gb_jetzt: float | None          # Summe der gemessenen Teile, fest belegter Arbeitsspeicher
+    eingeblendet_gb: float | None   # Summe der eingeblendeten Dateien der gemessenen Teile
     cpu_prozent: float | None       # Summe der gemessenen Teile, Prozent eines Kerns
+    platte_gb: float | None         # Summe der gemessenen Plattenbelegung der Teile
     teile: list[TeilAnsicht]
     folge: list[str]                # Kennungen der Teile in Startreihenfolge (Anhalten umgekehrt)
     nutzt: list[NutzungAnsicht]
@@ -115,14 +124,17 @@ def _summe(werte: list[float | None], stellen: int) -> float | None:
     return round(sum(gemessen), stellen) if gemessen else None
 
 
-def _teil(t: Teil, d: Dienst, p: Prozesse | None) -> TeilAnsicht:
+def _teil(t: Teil, d: Dienst, p: Prozesse | None, platte: Belegung | None, abbild: str | None) -> TeilAnsicht:
     b = d.bericht()
     # Prozesse aus dem letzten Takt, nur solange er läuft (wie die Messwerte); nach dem Anhalten nie veraltete pids
     p = p if p is not None and b.zustand in LAUFEND else Prozesse()
+    eingeblendet = round(p.eingeblendet_gb, 2) if p.eingeblendet_gb is not None and b.gb_jetzt is not None else None
     return TeilAnsicht(kennung=t.kennung, name=t.name, zweck=t.zweck, art=t.art, port=b.port, braucht=t.braucht, zustand=b.zustand,
-                       fremd=b.fremd, gb_jetzt=b.gb_jetzt, spitze_gb=b.spitze_gb, schaetzung_gb=t.speicher_gb, cpu_prozent=b.cpu_prozent,
+                       fremd=b.fremd, programm=abbild if t.art == Art.DOCKER else p.programm, gb_jetzt=b.gb_jetzt,
+                       eingeblendet_gb=eingeblendet, spitze_gb=b.spitze_gb, schaetzung_gb=t.speicher_gb, cpu_prozent=b.cpu_prozent,
                        aktiv=b.aktiv, soll=b.soll, meldung=b.meldung, ordner=str(t.ordner), protokolldatei=str(d.protokolldatei()),
-                       pids=p.pids, laeuft_seit=p.seit)
+                       pids=p.pids, laeuft_seit=p.seit, daten=[str(x) for x in t.daten], platte_gb=platte.gb if platte else None,
+                       platte_geprueft=platte.geprueft if platte else None, platte_meldung=platte.meldung if platte else "")
 
 
 class Laufzeit:
@@ -132,14 +144,27 @@ class Laufzeit:
         self.ordner = ordner
         self.verwalter = Verwalter(ordner, ordner.einstellungen())
         self.erreichbarkeiten = Erreichbarkeiten(self.verwalter.einstellungen.nutzt)
+        e = self.verwalter.einstellungen
+        self.platte = Plattenpuffer(e.platte, e.docker.pfad)
         self.aufgaben: list[asyncio.Task] = []
 
     def nutzungen(self) -> list[Nutzung]:
         return [n for a in self.verwalter.apps.values() for n in a.nutzt]
 
+    def alle_teile(self) -> dict[str, Teil]:
+        return {a.teilkennung(t.kennung): t for a in self.verwalter.apps.values() for t in a.teile}
+
+    def takt_s(self) -> float:
+        return self.verwalter.takt_s
+
+    def docker_laeuft(self) -> bool:
+        d = self.verwalter.dienste.get(DOCKER)
+        return d is not None and d.zustand == Zustand.LAEUFT
+
     async def starten(self) -> None:
         self.aufgaben = [asyncio.create_task(self.verwalter.schleife(), name="apps"),
-                         asyncio.create_task(self.erreichbarkeiten.schleife(self.nutzungen, lambda: self.verwalter.takt_s), name="nutzt")]
+                         asyncio.create_task(self.erreichbarkeiten.schleife(self.nutzungen, self.takt_s), name="nutzt"),
+                         asyncio.create_task(self.platte.schleife(self.alle_teile, self.docker_laeuft, self.takt_s), name="platte")]
 
     async def beenden(self) -> None:
         for t in self.aufgaben:
@@ -154,10 +179,12 @@ class Laufzeit:
 
     def app(self, a: App) -> AppAnsicht:
         v = self.verwalter
-        teile = [_teil(t, v.dienste[k], v.prozesse.get(k)) for t in a.teile if (k := a.teilkennung(t.kennung)) in v.dienste]
+        teile = [_teil(t, v.dienste[k], v.prozesse.get(k), self.platte.stand(k), self.platte.abbild(k))
+                 for t in a.teile if (k := a.teilkennung(t.kennung)) in v.dienste]
         return AppAnsicht(kennung=a.kennung, name=a.name, zweck=a.zweck, beschreibung=a.beschreibung, oberflaeche=a.oberflaeche,
                           arten=a.arten, zustand=v.zustand(a), soll=v.soll(a), gb_jetzt=_summe([t.gb_jetzt for t in teile], 2),
-                          cpu_prozent=_summe([t.cpu_prozent for t in teile], 1), teile=teile, folge=[t.kennung for t in v.folge(a)],
+                          eingeblendet_gb=_summe([t.eingeblendet_gb for t in teile], 2), cpu_prozent=_summe([t.cpu_prozent for t in teile], 1),
+                          platte_gb=_summe([t.platte_gb for t in teile], 3), teile=teile, folge=[t.kennung for t in v.folge(a)],
                           nutzt=[self.nutzung(n) for n in a.nutzt], datei=str(self.ordner.apps_ordner / f"{a.kennung}.toml"))
 
     def docker(self) -> DockerAnsicht | None:
