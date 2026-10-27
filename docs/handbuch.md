@@ -9,7 +9,7 @@ sicherung:
   - "kein eigenes Werkzeug (Stand 24.10.2026); `~/Stellwerk/apps` gehört zur Sicherung des Macs (siehe Grundlage Mac). Die Einträge der Webapps liegen als `stellwerk.toml` in ihren Repos und lassen sich von dort neu kopieren"
 schluessel_orte: []
 einrichten: einrichten.sh
-stand: 953af02
+stand: adaf111
 ---
 
 # Stellwerk
