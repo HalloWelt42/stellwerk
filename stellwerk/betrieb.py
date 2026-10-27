@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from enum import Enum
+from pathlib import Path
 
 from dienstkern.dienst import Dienst
 from dienstkern.verwalter import Ergebnis, Neustartregeln
@@ -83,6 +84,15 @@ class Verwalter(Kernverwalter):
                 gelesen[app.kennung] = app
             except ValidationError as e:
                 fehler.append(Ladefehler(datei=f"{app.kennung}.toml", meldung=lesbar(e)))
+        # Eine fehlerhafte Datei hält ihre Teile nicht an: die Webapp bleibt mit ihrer letzten gültigen Fassung, der
+        # Fehler steht in den Ladefehlern. Der gleiche Schutz im Dienstkern greift hier nicht, weil er Dienste am
+        # Dateinamen erkennt und die Teile "<app>.<teil>" heißen (27.10.2026: ein unbekanntes Feld hätte sonst alle Teile
+        # der Webapp angehalten).
+        for f in fehler:
+            alt = self.apps.get(Path(f.datei).stem)
+            if alt is not None and alt.kennung not in gelesen:
+                vorlagen += [teil_vorlage(alt, t) for t in alt.teile]
+                gelesen[alt.kennung] = alt
         if any(t.art == Art.DOCKER for a in gelesen.values() for t in a.teile):
             vorlagen.append(docker_vorlage(self.einstellungen.docker))
         self.apps = gelesen

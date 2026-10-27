@@ -85,6 +85,27 @@ async def test_scheiternder_teil_wird_gemeldet(tmp_path: Path):
     assert v.zustand(v.apps["probe"]) == AppZustand.GESTOERT
 
 
+async def test_fehlerhafte_datei_haelt_ihre_teile_nicht_an(tmp_path: Path):
+    port_b, port_o = freier_port(), freier_port()
+    gut = zweiteilig(tmp_path, port_b, port_o)
+    v = verwalter(stellwerk(tmp_path, {"probe": gut}))
+    await v.runde()
+    assert (await v.app_starten("probe")).erfolg
+    await v.runde()
+    gruppen = {k: d.stand.gruppe for k, d in v.dienste.items()}
+    datei = tmp_path / "apps" / "probe.toml"
+    for kaputt in (gut + 'unbekannt = "Feld"\n', gut + "[[teile]\n"):         # unbekanntes Feld, kein TOML
+        datei.write_text(kaputt)
+        await v.runde()
+        assert [f.datei for f in v.ladefehler] == ["probe.toml"]
+        assert sorted(v.dienste) == ["probe.backend", "probe.oberflaeche"] and "probe" in v.apps
+        assert offen(port_b) and offen(port_o) and v.zustand(v.apps["probe"]) == AppZustand.LAEUFT
+    datei.write_text(gut)
+    await v.runde()
+    assert not v.ladefehler and {k: d.stand.gruppe for k, d in v.dienste.items()} == gruppen
+    assert (await v.app_anhalten("probe")).erfolg
+
+
 def _fehler(tmp: Path, text: str) -> str:
     o = stellwerk(tmp, {"x": text})
     apps, fehler = o.apps()
