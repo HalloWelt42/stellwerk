@@ -14,6 +14,7 @@ from dienstkern.web import protokoll_einrichten
 
 from .betrieb import Verwalter
 from .konfig import STANDARD_ORDNER, Ordner
+from .prozesse import Prozesse
 
 
 def laufen(ordner: Ordner) -> None:
@@ -30,11 +31,12 @@ async def liste(ordner: Ordner) -> None:
     for f in v.ladefehler:
         print(f"FEHLER  {f.datei}: {f.meldung}")
     for a in v.apps.values():
-        print(f"{v.zustand(a).value:10} {a.kennung:20} {a.name}")
+        print(f"{v.zustand(a).value:10} {a.kennung:20} {a.name} ({a.zweck or 'Zweck fehlt'})")
         for d in v.teile(a):
             b = d.bericht()
             jetzt = f"{b.gb_jetzt:5.1f} GB" if b.gb_jetzt is not None else "      -"
-            print(f"  {b.zustand.value:9} {b.kennung:28} {jetzt}  Port {b.port or '-':>5}  {b.meldung}")
+            pids = ",".join(str(p) for p in v.prozesse.get(d.kennung, Prozesse()).pids) or "-"
+            print(f"  {b.zustand.value:9} {b.kennung:28} {jetzt}  Port {b.port or '-':>5}  Prozesse {pids}  {b.meldung}")
 
 
 def main() -> None:

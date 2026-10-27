@@ -54,6 +54,7 @@ export interface Einstellungen {
   messung: Messung;
   neustart: Neustartregeln;
   docker: DockerLaufzeit;
+  nutzt: NutztPruefung;
 }
 /**
  * This interface was referenced by `Stellwerk`'s JSON-Schema
@@ -126,19 +127,39 @@ export interface DockerLaufzeit {
   pfad: string;
 }
 /**
+ * Prüfung der äußeren Abhängigkeiten (Feld `nutzt` der App-Dateien): gepuffert, nie beim Seitenaufruf.
+ *
+ * This interface was referenced by `Stellwerk`'s JSON-Schema
+ * via the `definition` "NutztPruefung".
+ */
+export interface NutztPruefung {
+  /**
+   * so oft wird jede äußere Abhängigkeit geprüft
+   */
+  abstand_s: number;
+  /**
+   * so lange darf ihre Antwort dauern
+   */
+  frist_s: number;
+}
+/**
  * This interface was referenced by `Stellwerk`'s JSON-Schema
  * via the `definition` "AppAnsicht".
  */
 export interface AppAnsicht {
   kennung: string;
   name: string;
+  zweck: string | null;
   beschreibung: string;
   oberflaeche: string | null;
   arten: Art[];
   zustand: AppZustand;
   soll: Soll | null;
   gb_jetzt: number | null;
+  cpu_prozent: number | null;
   teile: TeilAnsicht[];
+  folge: string[];
+  nutzt: NutzungAnsicht[];
   datei: string;
 }
 /**
@@ -148,8 +169,10 @@ export interface AppAnsicht {
 export interface TeilAnsicht {
   kennung: string;
   name: string;
+  zweck: string | null;
   art: Art;
   port: number | null;
+  braucht: string[];
   zustand: Zustand;
   fremd: boolean;
   gb_jetzt: number | null;
@@ -161,6 +184,22 @@ export interface TeilAnsicht {
   meldung: string;
   ordner: string;
   protokolldatei: string;
+  pids: number[];
+  laeuft_seit: number | null;
+}
+/**
+ * Eine äußere Abhängigkeit mit der letzten gepufferten Prüfung.
+ *
+ * This interface was referenced by `Stellwerk`'s JSON-Schema
+ * via the `definition` "NutzungAnsicht".
+ */
+export interface NutzungAnsicht {
+  name: string;
+  zweck: string;
+  ziel: string;
+  erreichbar: boolean | null;
+  geprueft: number | null;
+  meldung: string;
 }
 /**
  * This interface was referenced by `Stellwerk`'s JSON-Schema

@@ -3,11 +3,13 @@ zu Diensten des Kerns; geschaltet wird je Webapp, in der Reihenfolge ihrer Abhä
 
 Starten, Anhalten, Neustarts nach Absturz, Sollzustand und Messung je Teil kommen aus dem Dienstkern (gemeinsam mit dem
 Maschinenraum). Docker wird gestartet, sobald ein Docker-Teil startet, und nur von Hand angehalten, wenn kein
-Docker-Teil mehr läuft.
+Docker-Teil mehr läuft. Je Takt hält der Verwalter zusätzlich fest, welche Prozesse er für jeden Teil führt und seit
+wann sie laufen (prozesse.py).
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from enum import Enum
 
@@ -18,7 +20,8 @@ from dienstkern.vorlage import Ladefehler, Vorlage, lesbar
 from dienstkern.zustand import Soll, Zustand
 from pydantic import ValidationError
 
-from .konfig import DOCKER, App, Art, Einstellungen, Ordner, docker_vorlage, teil_vorlage
+from .konfig import DOCKER, App, Art, Einstellungen, Ordner, Teil, docker_vorlage, teil_vorlage
+from .prozesse import Fuehrung, Prozesse, erfassen
 
 log = logging.getLogger("stellwerk")
 
@@ -30,6 +33,12 @@ class AppZustand(str, Enum):
     TEILWEISE = "teilweise"    # manche Teile laufen, andere nicht
     STOPPT = "stoppt"
     GESTOERT = "gestoert"
+
+
+class Schaltung(str, Enum):
+    STARTEN = "starten"           # mit allem, was gebraucht wird, zuerst
+    ANHALTEN = "anhalten"
+    NEUSTARTEN = "neustarten"
 
 
 def app_zustand(zustaende: list[Zustand]) -> AppZustand:
@@ -53,6 +62,7 @@ class Verwalter(Kernverwalter):
         self.ordner = ordner
         self.einstellungen = einstellungen
         self.apps: dict[str, App] = {}
+        self.prozesse: dict[str, Prozesse] = {}         # je Teil (Kennung des Dienstes), Stand des letzten Takts
         super().__init__(self._lesen, ordner.protokolle, ordner.zustand_datei, herkunft="vom Stellwerk")
 
     @property
@@ -88,16 +98,45 @@ class Verwalter(Kernverwalter):
     def docker_apps(self) -> list[App]:
         return [a for a in self.apps.values() if Art.DOCKER in a.arten]
 
-    def _folge(self, app: App) -> list[str]:
-        return self.reihenfolge([app.teilkennung(t.kennung) for t in app.teile])
+    def folge(self, app: App) -> list[Teil]:
+        """Startreihenfolge der Teile: wer gebraucht wird, zuerst (Reihenfolge des Dienstkerns). Anhalten umgekehrt."""
+        nach_kennung = {app.teilkennung(t.kennung): t for t in app.teile}
+        return [nach_kennung[k] for k in self.reihenfolge(list(nach_kennung))]
+
+    async def runde(self) -> None:
+        """Takt des Dienstkerns, danach die Prozesse je Teil (eigene Tabelle, im eigenen Faden)."""
+        await super().runde()
+        fuehrung = {k: Fuehrung(gruppe=d.stand.gruppe, fremd_pid=d.fremd_pid) for k, d in self.dienste.items()}
+        self.prozesse = await asyncio.to_thread(erfassen, fuehrung)
 
     # ── Schalten ─────────────────────────────────────────────────────────
+    async def app_schalten(self, kennung: str, schaltung: Schaltung) -> Ergebnis:
+        if schaltung == Schaltung.STARTEN:
+            return await self.app_starten(kennung)
+        if schaltung == Schaltung.ANHALTEN:
+            return await self.app_anhalten(kennung)
+        return await self.app_neu_starten(kennung)
+
+    async def teil_schalten(self, kennung: str, teil: str, schaltung: Schaltung) -> Ergebnis:
+        """Ein einzelner Teil: Starten bringt erst, was er braucht (auch Docker); Anhalten trifft nur ihn, Teile, die
+        ihn brauchen, laufen weiter."""
+        app = self.apps.get(kennung)
+        if app is None or not any(t.kennung == teil for t in app.teile):
+            return Ergebnis(ziel=f"{kennung}.{teil}", erfolg=False, meldung=f"unbekannter Teil {kennung}.{teil}")
+        k = app.teilkennung(teil)
+        if schaltung == Schaltung.STARTEN:
+            return await self.starten(k)
+        if schaltung == Schaltung.ANHALTEN:
+            return await self.anhalten(k)
+        return await self.neu_starten(k)
+
     async def app_starten(self, kennung: str) -> Ergebnis:
         """Alle Teile, wer gebraucht wird zuerst; scheitert ein Teil, bleibt es dabei (die übrigen laufen weiter)."""
         app = self.apps.get(kennung)
         if app is None:
             return Ergebnis(ziel=kennung, erfolg=False, meldung=f"unbekannte Webapp {kennung}")
-        for k in self._folge(app):
+        for t in self.folge(app):
+            k = app.teilkennung(t.kennung)
             e = await self.starten(k)
             if not e.erfolg:
                 return Ergebnis(ziel=kennung, erfolg=False, meldung=f"{self.dienste[k].vorlage.name}: {e.meldung}")
@@ -109,7 +148,8 @@ class Verwalter(Kernverwalter):
         if app is None:
             return Ergebnis(ziel=kennung, erfolg=False, meldung=f"unbekannte Webapp {kennung}")
         fehler = []
-        for k in reversed(self._folge(app)):
+        for t in reversed(self.folge(app)):
+            k = app.teilkennung(t.kennung)
             e = await self.anhalten(k)
             if not e.erfolg:
                 fehler.append(f"{self.dienste[k].vorlage.name}: {e.meldung}")

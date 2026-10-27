@@ -63,7 +63,7 @@ def schein_docker(tmp: Path) -> str:
 
 def stellwerk(tmp: Path, apps: dict[str, str], docker_pfad: str | None = None) -> Ordner:
     (tmp / "apps").mkdir(parents=True, exist_ok=True)
-    einstellungen = '[messung]\ntakt_s = 1\n[neustart]\npausen_s = [0.2]\n'
+    einstellungen = '[messung]\ntakt_s = 1\n[neustart]\npausen_s = [0.2]\n[nutzt]\nabstand_s = 1\nfrist_s = 1\n'
     if docker_pfad:
         einstellungen += f'[docker]\npfad = "{docker_pfad}"\nstartzeit_s = 15\nanhaltezeit_s = 10\nprozessmuster = "keiner-passt"\n'
     (tmp / "einstellungen.toml").write_text(einstellungen)

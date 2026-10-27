@@ -1,12 +1,16 @@
 # Eine Webapp mit drei Teilen: Datenbank im Container, Backend und Oberfläche als eigene Prozesse.
 # Abzulegen als ~/Stellwerk/apps/notizbuch.toml; der Dateiname ist die Kennung.
 name = "Notizbuch"
-beschreibung = "Notizen mit Volltextsuche"
+# kurz, wofür sie da ist: ein Begriff oder wenige Wörter (höchstens 40 Zeichen), steht neben dem Namen
+zweck = "Notizen"
+# länger, in ganzen Sätzen; nur in der Detailansicht
+beschreibung = "Notizen mit Volltextsuche. Zusammenfassungen schreibt die KI über die Leitstelle, die Anmeldung läuft über die Kellerwolke."
 oberflaeche = "http://localhost:5300"
 
 [[teile]]
 kennung = "datenbank"
 name = "Datenbank"
+zweck = "Notizen ablegen"
 art = "docker"
 ordner = "~/Projekte/notizbuch"
 # genau der Aufruf, den das Projekt selbst nutzt; sonst entstünde ein zweites Compose-Projekt mit leerem Datenbestand
@@ -19,6 +23,7 @@ startzeit_s = 120
 [[teile]]
 kennung = "backend"
 name = "Backend"
+zweck = "Schnittstelle"
 ordner = "~/Projekte/notizbuch/backend"
 befehl = [".venv/bin/uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8300"]
 port = 8300
@@ -28,7 +33,34 @@ umgebung_datei = "~/Projekte/notizbuch/.env"
 [[teile]]
 kennung = "oberflaeche"
 name = "Oberfläche"
+zweck = "Bedienung im Browser"
 ordner = "~/Projekte/notizbuch/frontend"
 befehl = ["npm", "run", "dev", "--", "--port", "5300"]
 port = 5300
 braucht = ["backend"]
+
+# Äußere Abhängigkeiten: was die Webapp außerhalb ihrer Teile braucht. Das Stellwerk startet nichts davon, es zeigt nur,
+# ob es erreichbar ist (gepuffert, Abstand und Frist unter [nutzt] in einstellungen.toml). Je Eintrag entweder
+# pruefadresse (Antwort unter 500) oder port, mit rechner für einen anderen Rechner.
+
+[[nutzt]]
+name = "Leitstelle"
+zweck = "KI-Aufträge"
+pruefadresse = "http://pi.local:8530/"
+
+[[nutzt]]
+name = "Kellerwolke"
+zweck = "Anmeldung und Dateien"
+rechner = "pi.local"
+port = 39277
+
+[[nutzt]]
+name = "Fundus"
+zweck = "Wissensspeicher"
+pruefadresse = "https://pi.local:8410/"
+
+[[nutzt]]
+name = "Vektorspeicher"
+zweck = "Bedeutungssuche"
+# auf diesem Rechner
+port = 6433
